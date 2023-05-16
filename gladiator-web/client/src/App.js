@@ -1,44 +1,27 @@
 import './App.css';
 import * as React from 'react'
 import { useState } from 'react';
+import { LoginPage } from './pages/LoginPage';
+import { Box } from '@mui/material';
 
 
-export const TestComponent = () => {
+export const App = () => {
 
-  const [posts, setPosts] = useState([{}]);
+  // const [posts, setPosts] = useState([{}]);
 
-  // useEffect(() => {
+  // const getPosts = () => {
   //   fetch("/api/posts/").then(
   //     result => result.json()
   //   ).then(
   //     data => {
   //       setPosts(data)
   //     });
-  // }, [])
-
-  const getPosts = () => {
-    fetch("/api/posts/").then(
-      result => result.json()
-    ).then(
-      data => {
-        setPosts(data)
-      });
-    console.log(posts);
-  };
+  //   console.log(posts);
+  // };
 
   return (
-    <div className="app">
-      <button onClick={getPosts}>Get Posts</button>
-      {(typeof posts.posts === 'undefined') ? (
-        <p>loading....</p>
-      ):(
-        posts.posts.map((post, i) => (
-          <div key={i}>
-          <p>[id: {post.id}]</p>
-          <p>[title: {post.title}]</p>
-        </div>
-        ))
-      )}
-    </div>
+    <Box>
+      <LoginPage />
+    </Box>
   );
 }

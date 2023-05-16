@@ -1,13 +1,14 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import {TestComponent} from './App';
+import {App} from './App';
+import {MainNavBar} from './components/ui/MainNavBar';
 import reportWebVitals from './reportWebVitals';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <TestComponent />
+    <App />
   </React.StrictMode>
 );
 

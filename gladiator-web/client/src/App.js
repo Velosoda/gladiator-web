@@ -1,9 +1,7 @@
 import './App.css';
 import * as React from 'react'
-import { useState } from 'react';
-import { LoginPage } from './pages/LoginPage';
-import { Box } from '@mui/material';
-
+import { LandingPage } from './components/Landing/LandingPage';
+import Box from '@mui/material/Box'
 
 export const App = () => {
 
@@ -19,9 +17,4 @@ export const App = () => {
   //   console.log(posts);
   // };
 
-  return (
-    <Box>
-      <LoginPage />
-    </Box>
-  );
 }

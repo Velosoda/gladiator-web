@@ -9,6 +9,10 @@ var http = require('http'),
     passport = require('passport'),
     errorhandler = require('errorhandler'),
     mongoose = require('mongoose');
+    logger = require('morgan');
+
+const MongoStore = require("connect-mongo");
+
 var isProduction = process.env.NODE_ENV === 'production';
 
 // Create global app object
@@ -22,21 +26,21 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
 app.use(require('method-override')());
-app.use(express.static(__dirname + '/public'));
+app.use(express.static(path.join(__dirname, 'public')));
 
-app.use(session({ secret: 'conduit', cookie: { maxAge: 60000 }, resave: false, saveUninitialized: false  }));
 
 if (!isProduction) {
   app.use(errorhandler());
 }
 
+var uri = ""
 if(isProduction){
   mongoose.connect(process.env.MONGODB_URI);
 } else {
   const mongoUser = process.env.MONGO_DB_USER
   const mongoPassword = process.env.MONGO_DB_PASSWORD
   const mongoAddress = process.env.MONGO_DB_ADDRESS
-  const uri = `mongodb+srv://${mongoUser}:${mongoPassword}@${mongoAddress}/?retryWrites=true&w=majority`;
+  uri = `mongodb+srv://${mongoUser}:${mongoPassword}@${mongoAddress}/?retryWrites=true&w=majority`;
   mongoose.connect(uri);
   mongoose.set('debug', true);
 }
@@ -44,6 +48,20 @@ if(isProduction){
 require('./models/User');
 require('./models/PracticePerson');
 require('./config/passport');
+
+app.use(session({
+  secret: 'im not sure what this is ',
+  cookie: { maxAge: 60000 },
+  resave: false, 
+  saveUninitialized: false,
+  store: MongoStore.create({
+    mongoUrl: uri,
+    ttl: 14 * 24 * 60 * 60,
+    autoRemove: 'native' 
+  })
+}));
+
+app.use(passport.authenticate('session'));
 
 app.use(require('./routes'));
 

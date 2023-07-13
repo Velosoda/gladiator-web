@@ -12,13 +12,15 @@ import Button from '@mui/material/Button';
 import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import ShieldIcon from '@mui/icons-material/Shield';
+import { useState } from 'react';
+import { Navigate, redirect, useNavigate } from 'react-router-dom';
+import { AccountCircle } from '@mui/icons-material';
+import { useEffect } from 'react';
 
-const pages = ['Home', 'Market', 'Map', 'Promotion', 'Inventory'];
-const settings = ['Profile', 'Settings', 'Logout'];
-
-export const MainNavBar = () => {
-  const [anchorElNav, setAnchorElNav] = React.useState(null);
-  const [anchorElUser, setAnchorElUser] = React.useState(null);
+export const TopNav = props => {
+  const [anchorElNav, setAnchorElNav] = useState(null);
+  const [anchorElUser, setAnchorElUser] = useState(null);
+  const navigate = useNavigate();
 
   const handleOpenNavMenu = (event) => {
     setAnchorElNav(event.currentTarget);
@@ -34,7 +36,6 @@ export const MainNavBar = () => {
   const handleCloseUserMenu = () => {
     setAnchorElUser(null);
   };
-
   return (
     <AppBar position="static">
       <Container maxWidth="xl">
@@ -87,9 +88,9 @@ export const MainNavBar = () => {
                 display: { xs: 'block', md: 'none' },
               }}
             >
-              {pages.map((page) => (
-                <MenuItem key={page} onClick={handleCloseNavMenu}>
-                  <Typography textAlign="center">{page}</Typography>
+              {props.pages.map((page) => (
+                <MenuItem key={page.text} onClick={()=>navigate(page.link)}>
+                  <Typography textAlign="center">{page.text}</Typography>
                 </MenuItem>
               ))}
             </Menu>
@@ -114,48 +115,50 @@ export const MainNavBar = () => {
             NAME OF THE GAME
           </Typography>
           <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' } }}>
-            {pages.map((page) => (
+            {props.pages.map((page) => (
               <Button
-                key={page}
-                onClick={handleCloseNavMenu}
+                key={page.text}
+                onClick={()=>navigate(page.link)}
                 sx={{ my: 2, color: 'white', display: 'block' }}
               >
-                {page}
+                {page.text}
               </Button>
             ))}
           </Box>
-
-          <Box sx={{ flexGrow: 0 }}>
-            <Tooltip title="Open settings">
-              <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
-                <Avatar alt="Remy Sharp" src="/static/images/avatar/2.jpg" />
-              </IconButton>
-            </Tooltip>
-            <Menu
-              sx={{ mt: '45px' }}
-              id="menu-appbar"
-              anchorEl={anchorElUser}
-              anchorOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              keepMounted
-              transformOrigin={{
-                vertical: 'top',
-                horizontal: 'right',
-              }}
-              open={Boolean(anchorElUser)}
-              onClose={handleCloseUserMenu}
-            >
-              {settings.map((setting) => (
-                <MenuItem key={setting} onClick={handleCloseUserMenu}>
-                  <Typography textAlign="center">{setting}</Typography>
+          {props.settings && (
+            <Box sx={{ flexGrow: 0 }}>
+              <Tooltip title="Open settings">
+                <IconButton onClick={handleOpenUserMenu} sx={{ p: 0 }}>
+                  <AccountCircle />
+                </IconButton>
+              </Tooltip>
+              <Menu
+                sx={{ mt: '45px' }}
+                id="menu-appbar"
+                anchorEl={anchorElUser}
+                anchorOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                keepMounted
+                transformOrigin={{
+                  vertical: 'top',
+                  horizontal: 'right',
+                }}
+                open={Boolean(anchorElUser)}
+                onClose={handleCloseUserMenu}
+              >
+              {props.settings.map((setting) => (
+                <MenuItem key={setting.text} onClick={handleCloseUserMenu}>
+                  <Typography textAlign="center">{setting.text}</Typography>
                 </MenuItem>
               ))}
-            </Menu>
-          </Box>
+              </Menu>
+            </Box>
+          )}
         </Toolbar>
       </Container>
     </AppBar>
   );
 }
+export default TopNav;

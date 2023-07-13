@@ -1,6 +1,5 @@
 import * as React from 'react';
-import { LoginForm } from "./LoginForm";
-import { SignUpForm } from "./SignUpForm";
+import { LoginForm } from "../../login/components/LoginForm";
 import LoginIcon from '@mui/icons-material/Login';
 import AddBoxIcon from '@mui/icons-material/AddBox';
 import Stack from '@mui/material/Stack';
@@ -8,9 +7,9 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Box from '@mui/material/Box'
 import { Typography } from '@mui/material';
-import { MainNavBar }  from '../MainNavBar';
+import { SignUpForm } from 'login/components/SignUpForm';
 
-export const LandingPage = () => {
+export const LoginPage = () => {
 
     const [alignment, setAlignment] = React.useState('login');
   
@@ -48,12 +47,9 @@ export const LandingPage = () => {
 
     return (
         <Box>
-            <MainNavBar 
-                pages={['How To Play', 'Watch', 'Community', 'Login / Sign Up']} 
-                subDirectory="landing"
-            />
             <LoginButtonMenu/>
             { alignment === 'login' ? <LoginForm/> : <SignUpForm/> }
         </Box>
     );
 }
+export default LoginPage;

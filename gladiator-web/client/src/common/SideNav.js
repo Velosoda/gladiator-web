@@ -34,7 +34,7 @@ const MenuItem = ({ item }) => {
 };
 
 const SingleLevel = ({ item }) => {
-    
+
 const navigate = useNavigate();
   return (
     <ListItem button onClick={() => navigate(item.link)}>
@@ -73,7 +73,7 @@ const MultiLevel = ({ item }) => {
 const SideNav = ({ menu }) => {
 
   return (
-    <Stack width="25%">
+    <Stack minWidth="20%" >
       {menu.map((item, key) => (
         <MenuItem key={key} item={item}/>
       ))}

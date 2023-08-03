@@ -1,6 +1,7 @@
 import {
   Box,
   Button,
+  ButtonGroup,
   Card,
   CardActions,
   CardContent,
@@ -41,7 +42,7 @@ const CircularProgressWithLabel = (props) => {
 
 const FightCardListItem = ({ fightCard, itemVariant }) => {
   const isCommited = fightCard.status === "Commited";
-  const CurrentFightCardActions = ({isCommited}) => {
+  const CurrentFightCardActions = ({ isCommited }) => {
     return (
       <Stack direction="column" spacing={1}>
         <Button
@@ -87,10 +88,7 @@ const FightCardListItem = ({ fightCard, itemVariant }) => {
   const PastFightCardActions = () => {
     return (
       <Stack direction="column" spacing={1}>
-        <Button
-          variant="contained"
-          startIcon={<VisibilityIcon />}
-        >
+        <Button variant="contained" startIcon={<VisibilityIcon />}>
           View
         </Button>
         <Button variant="contained" startIcon={<ReplayIcon />}>
@@ -107,49 +105,64 @@ const FightCardListItem = ({ fightCard, itemVariant }) => {
           <Divider />
         </Box>
         <Stack direction="row">
-          <CardContent>
-            <Typography> Date: {fightCard.date}</Typography>
-            <Typography> Fights: {fightCard.fights.length}</Typography>
-            <Typography> Arena: {fightCard.arena.name}</Typography>
-            <Typography> Broadcaster: {fightCard.broadcaster.name}</Typography>
-            <Typography> Status: {fightCard.status}</Typography>
-            {isCommited && <CheckIcon color="success" fontSize="large" />}
-            {fightCard.arena.maxFights === fightCard.fights.length && (
-              <CircularProgressWithLabel
-                value={
-                  (fightCard.fights.length / fightCard.arena.maxFights) * 100
-                }
-              />
-            )}
-            {fightCard.status === "Preparing" && (
-              <CircularProgressWithLabel
-                value={
-                  (fightCard.fights.length / fightCard.arena.maxFights) * 100
-                }
-              />
-            )}
-          </CardContent>
-          <CardContent>
-            <Box
-              bgcolor="gray"
-              borderColor="black"
-              border={4}
-              width="100px"
-              height="100px"
-              textAlign="center"
-            >
-              <Typography>Fight Card Score</Typography>
-              <Divider />
-              <Typography variant="h4">100</Typography>
-            </Box>
-          </CardContent>
-          <CardActions>
-            {itemVariant === "current" ? (
-              <CurrentFightCardActions isCommited={isCommited}/>
-            ) : (
-              <PastFightCardActions />
-            )}
-          </CardActions>
+          <Box width="50%">
+            <CardContent>
+              <Typography> Date: {fightCard.date}</Typography>
+              <Typography> Fights: {fightCard.fights.length}</Typography>
+              <Typography> Arena: {fightCard.arena.name}</Typography>
+              <Typography>
+                {" "}
+                Broadcaster: {fightCard.broadcaster.name}
+              </Typography>
+              <Typography> Status: {fightCard.status}</Typography>
+              {isCommited && <CheckIcon color="success" fontSize="large" />}
+              {fightCard.arena.maxFights === fightCard.fights.length && (
+                <CircularProgressWithLabel
+                  value={
+                    (fightCard.fights.length / fightCard.arena.maxFights) * 100
+                  }
+                />
+              )}
+              {fightCard.status === "Preparing" && (
+                <CircularProgressWithLabel
+                  value={
+                    (fightCard.fights.length / fightCard.arena.maxFights) * 100
+                  }
+                />
+              )}
+            </CardContent>
+          </Box>
+          <Box minWidth="20%">
+            <CardContent>
+              <Box
+                bgcolor="gray"
+                borderColor="black"
+                border={4}
+                width="100px"
+                height="100px"
+                textAlign="center"
+              >
+                <Typography>Fight Card Score</Typography>
+                <Divider />
+                <Typography variant="h4">100</Typography>
+              </Box>
+            </CardContent>
+          </Box>
+          <Box alignSelf="right" width="30%" flexShrink={1}>
+            <CardActions>
+              <ButtonGroup
+                orientation="vertical"
+                variant="text"
+                sx={{ width: "100%" }}
+              >
+                {itemVariant === "current" ? (
+                  <CurrentFightCardActions isCommited={isCommited} />
+                ) : (
+                  <PastFightCardActions />
+                )}
+              </ButtonGroup>
+            </CardActions>
+          </Box>
         </Stack>
       </Card>
     </>

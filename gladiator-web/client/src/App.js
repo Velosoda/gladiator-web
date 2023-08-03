@@ -61,9 +61,9 @@ const App = () => {
           }
         />
         {/* if the user is logged in the side bar should show */}
-        <Stack direction="row">
+        <Stack direction="row" width="100%">
           <SideNav menu={menu}/>
-          <Box>
+          <Box flex={1} p={2} width="80%" minWidth="30%">
             <Routes>
               {/* Top Bar */}
               <Route path="/" element={<LandingPage />}/>

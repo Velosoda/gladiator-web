@@ -70,8 +70,8 @@ const fightCards = [
 
 const PastFightCard = props => {
     return (
-        <Stack width="100%" direction="column" spacing={2} p={2}>
-            {fightCards.map((item, key) => (
+        <Stack flex={1} direction="column" spacing={2} p={2}>
+        {fightCards.map((item, key) => (
                 <Box key={key}>
                     <FightCardListItem fightCard={item} itemVariant="past"/>
                 </Box>

@@ -11,40 +11,41 @@ import { Box, Stack } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 
 const hasChildren = (item) => {
-    const { items: children } = item;
-    
-    if (children === undefined) {
-        return false;
-    }
-    
-    if (children.constructor !== Array) {
-        return false;
-    }
-    
-    if (children.length === 0) {
-        return false;
-    }
-    
-    return true;
+  const { items: children } = item;
+
+  if (children === undefined) {
+    return false;
+  }
+
+  if (children.constructor !== Array) {
+    return false;
+  }
+
+  if (children.length === 0) {
+    return false;
+  }
+
+  return true;
 };
 
 const MenuItem = ({ item }) => {
-    const Component = hasChildren(item) ? MultiLevel : SingleLevel;
-    return <Component item={item}/>;
+  const Component = hasChildren(item) ? MultiLevel : SingleLevel;
+  return <Component item={item} />;
 };
 
 const SingleLevel = ({ item }) => {
 
-const navigate = useNavigate();
+  const navigate = useNavigate();
+  
   return (
     <ListItem button onClick={() => navigate(item.link)}>
       <ListItemIcon>{item.icon}</ListItemIcon>
-      <ListItemText primary={item.title} />
+      <ListItemText primary={item.title}/>
     </ListItem>
   );
 };
-const MultiLevel = ({ item }) => {
 
+const MultiLevel = ({ item }) => {
   const { items: children } = item;
   const [open, setOpen] = useState(false);
 
@@ -55,14 +56,14 @@ const MultiLevel = ({ item }) => {
   return (
     <>
       <ListItem button onClick={handleClick}>
-        <ListItemIcon>{item.icon}</ListItemIcon>
         <ListItemText primary={item.title} />
+        <ListItemIcon>{item.icon}</ListItemIcon>
         {open ? <ExpandLessIcon /> : <ExpandMoreIcon />}
       </ListItem>
       <Collapse in={open} timeout="auto" unmountOnExit>
         <List component="div" disablePadding>
           {children.map((child, key) => (
-            <MenuItem key={key} item={child}/>
+            <MenuItem key={key} item={child} />
           ))}
         </List>
       </Collapse>
@@ -71,11 +72,10 @@ const MultiLevel = ({ item }) => {
 };
 
 const SideNav = ({ menu }) => {
-
   return (
-    <Stack minWidth="20%" >
+    <Stack minWidth="20%">
       {menu.map((item, key) => (
-        <MenuItem key={key} item={item}/>
+        <MenuItem key={key} item={item} />
       ))}
     </Stack>
   );

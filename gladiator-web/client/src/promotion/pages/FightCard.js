@@ -27,7 +27,7 @@ import { max } from "lodash";
 
 const tomorrow = dayjs().add(1, "day");
 
-const todayNearestInterval= tomorrow.subtract(10, 'minutes')
+const todayNearestInterval = tomorrow.subtract(10, "minutes");
 
 const fightCards = [
   {
@@ -216,6 +216,7 @@ const FightCard = () => {
   const [selectedArena, setSelectedArena] = useState("0");
   const [selectedDateTime, setSelecetedDateTime] = useState(tomorrow);
 
+
   const handleSelectedBroadcasterChange = (event) => {
     console.log(event.target.value);
     setSelectedBroadcaster(event.target.value);
@@ -295,7 +296,7 @@ const FightCard = () => {
     };
     console.log(item);
     let newArr = [...flexFightCards];
-    newArr.push(item)
+    newArr.push(item);
     setExpandCreateFightCardForm(false);
     return setFlexFightCards(newArr);
   };
@@ -591,7 +592,11 @@ const FightCard = () => {
                 </TableBody>
               </Table>
             </TableContainer>
-            <Button onClick={CreateNewFightCard} variant="contained" disabled={selectedDateTime == tomorrow}>
+            <Button
+              onClick={CreateNewFightCard}
+              variant="contained"
+              disabled={selectedDateTime == tomorrow}
+            >
               Submit
             </Button>
           </Stack>
@@ -602,6 +607,7 @@ const FightCard = () => {
           </Box>
         ))}
       </Stack>
+
     </Box>
   );
 };

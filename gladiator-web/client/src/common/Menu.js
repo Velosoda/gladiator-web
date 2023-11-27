@@ -187,7 +187,6 @@ const menu = [
         link: "/gd/fights",
         items: [],
       },
-      
       {
         icon: <Group/>,
         title: "Players",

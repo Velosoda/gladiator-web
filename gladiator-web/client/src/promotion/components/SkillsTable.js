@@ -118,13 +118,6 @@ const SkillsTable = ({ skills }) => {
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
-              <TableCell align="center" colSpan={columns.length}>
-                Skills
-              </TableCell>
-            </TableRow>
-          </TableHead>
-          <TableHead>
-            <TableRow>
               {columns.map((column) => (
                 <TableCell
                   key={column.id}

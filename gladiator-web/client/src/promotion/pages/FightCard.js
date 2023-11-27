@@ -607,7 +607,6 @@ const FightCard = () => {
           </Box>
         ))}
       </Stack>
-
     </Box>
   );
 };

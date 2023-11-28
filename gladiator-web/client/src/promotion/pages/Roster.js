@@ -1,7 +1,14 @@
-import { Box, Button, ButtonGroup, Paper, Stack } from "@mui/material";
+import {
+  Box,
+  Button,
+  ButtonGroup,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
 import RosterListItem from "promotion/components/RosterListItem";
 import SkillsTable from "promotion/components/SkillsTable";
-import React from "react";
+import React, { useState } from "react";
 
 export const SkillTypes = {
   Boxing: "Boxing",
@@ -45,42 +52,42 @@ const fighters = [
       currentOverallHealth: 100,
       isDead: false,
       limbs: {
-        [LimbTypes.Head] :{
+        [LimbTypes.Head]: {
           currentHealth: 100,
           overallHealth: 100,
           isSevered: "No",
           canBeSevered: true,
           value: 5,
         },
-        [LimbTypes.Torso] :{
+        [LimbTypes.Torso]: {
           currentHealth: 100,
           overallHealth: 100,
           isSevered: "No",
           canBeSevered: false,
           value: 5,
         },
-        [LimbTypes.LeftArm] :{
+        [LimbTypes.LeftArm]: {
           currentHealth: 100,
           overallHealth: 100,
           isSevered: "No",
           canBeSevered: false,
           value: 2,
         },
-        [LimbTypes.RightArm] :{
+        [LimbTypes.RightArm]: {
           currentHealth: 100,
           overallHealth: 100,
           isSevered: "No",
           canBeSevered: false,
           value: 2,
         },
-        [LimbTypes.LeftLeg] :{
+        [LimbTypes.LeftLeg]: {
           currentHealth: 100,
           overallHealth: 100,
           isSevered: "No",
           canBeSevered: false,
           value: 2,
         },
-        [LimbTypes.RightLeg] :{
+        [LimbTypes.RightLeg]: {
           currentHealth: 100,
           overallHealth: 100,
           isSevered: "No",
@@ -294,19 +301,115 @@ const fighters = [
 ];
 
 const Roster = (props) => {
+  const [isExpanded, setExpanded] = useState(false);
+  const handleExpand = () => {
+    setExpanded(!isExpanded);
+  };
+  const containerStyle = {
+    overflow: "hidden",
+    transition: "width 0.5s ease", // Adjust the duration and easing as needed
+    width: isExpanded ? "100%" : "auto", // Set the maximum width when expanded
+  };
+
+  const tabComponentMap = {
+    Attributes: <AttributesTable attributes={fighter.attributes} />,
+    Skills: <SkillsTable skills={fighter.skills} />,
+    Health: <HealthTable health={fighter.health} />,
+  };
+  
+  const fighterMenuCatagories = ["Attributes", "Skills", "Health"]
   return (
     <Stack direction="column" spacing={2} p={2}>
       <Box border={1} width="100%" minWidth="20%" height={200}></Box>
       {fighters.map((item, key) => (
-        <Box
-          component={Paper}
-          key={key}
-          maxHeight="500px"
-          border={4}
-          borderRadius={3}
-        >
-          <RosterListItem fighter={item} />
-        </Box>
+        <>
+          <Box
+            component={Paper}
+            key={key}
+            maxHeight="500px"
+            border={4}
+            borderRadius={3}
+          >
+            <RosterListItem fighter={item} />
+          </Box>
+          <Box
+            component={Paper}
+            key={key}
+            height="500px"
+            width="100%"
+            border={4}
+            borderRadius={3}
+          >
+            <Box
+              height="10%"
+              width="100%"
+              borderBottom={4}
+              justifyContent="center"
+            >
+              <Typography variant="h4" align="center">
+                {" "}
+                {item.name}{" "}
+              </Typography>
+            </Box>
+            <Stack direction="row" height="100%">
+              <Box width="20%" height="90%" borderRight="4px">
+                <ButtonGroup
+                  variant="text"
+                  orientation="vertical"
+                  style={{
+                    display: "flex",
+                    gap: 0,
+                    flexDirection: "column",
+                    height: "100%",
+                  }}
+                >
+                  <Button style={{ flex: 1 }}>Attributes</Button>
+                  <Button style={{ flex: 1 }}>Skills</Button>
+                  <Button style={{ flex: 1 }}>Health</Button>
+                  <Button style={{ flex: 1 }}>Record</Button>
+                  <Button style={{ flex: 1 }}>Inventory</Button>
+                  <Button style={{ flex: 1 }}>Stats</Button>
+                  <Button style={{ flex: 1 }}>Contract</Button>
+                </ButtonGroup>
+              </Box>
+            </Stack>
+          </Box>
+          <Stack direction="row" style={containerStyle}>
+            <Box width="20%" borderRight="4px">
+              <ButtonGroup
+                variant="text"
+                orientation="vertical"
+                style={{
+                  display: "flex",
+                  gap: 0,
+                  flexDirection: "column",
+                  height: "100%",
+                }}
+              >
+                {
+                  fighterMenuCatagories.map((value, index) => {
+                    <Button onClick={handleExpand} style={{ flex: 1 }}>
+                      {value}
+                    </Button>
+                  })
+                }
+                <Button onClick={handleExpand} style={{ flex: 1 }}>
+                  Record
+                </Button>
+                <Button onClick={handleExpand} style={{ flex: 1 }}>
+                  Inventory
+                </Button>
+                <Button onClick={handleExpand} style={{ flex: 1 }}>
+                  Stats
+                </Button>
+                <Button onClick={handleExpand} style={{ flex: 1 }}>
+                  Contract
+                </Button>
+              </ButtonGroup>
+            </Box>
+            {isExpanded ? 'Collapse' : ""}
+          </Stack>
+        </>
       ))}
     </Stack>
   );

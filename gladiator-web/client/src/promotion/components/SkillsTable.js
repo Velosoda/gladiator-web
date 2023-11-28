@@ -6,10 +6,13 @@ import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
+import Button from "@mui/material/Button";
 import Paper from "@mui/material/Paper";
 import { SkillTypes } from "promotion/pages/Roster";
 import { useState } from "react";
-import { Box } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
+import Delete from "@mui/icons-material/Delete";
+import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 
 const columns = [
   { id: "name", label: "Move Name", minWidth: 50 },
@@ -112,88 +115,43 @@ const SkillsTable = ({ skills }) => {
 
   const [skillList, setSkillList] = useState(skills[SkillTypes.Boxing]);
 
+  const keySkills = ["Move", "Damage", "Hit pct", "Hype on hit", ""];
+
   return (
     <Box height="100%">
       <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
         <Table stickyHeader size="small">
           <TableHead>
             <TableRow>
-              {columns.map((column) => (
-                <TableCell
-                  key={column.id}
-                  align="left"
-                  style={{ minWidth: column.minWidth }}
-                >
-                  {column.label}
+              {keySkills.map((value, index) => (
+                <TableCell key={index} align="left">
+                  {value}
                 </TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
-            {skillList.map((row) => (
+            {skillList.map((move) => (
               <TableRow
-                key={row.name}
-                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+                key={move.name}
               >
                 <TableCell component="th" scope="row">
-                  {row.name}
+                  {move.strikingLimb} {move.name} ({move.level})
                 </TableCell>
-                <TableCell align="center">
-                  {row.targets
-                    .map((target) => {
-                      return target;
-                    })
-                    .join(",")}
+                <TableCell align="left">{move.damage}</TableCell>
+                <TableCell align="left">{move.targetHitRate}</TableCell>
+                <TableCell align="left">{move.hypeOnTargetHit}</TableCell>
+                <TableCell align="left">
+                  <IconButton size="small">
+                    <NavigateNextIcon />
+                  </IconButton>
                 </TableCell>
-                <TableCell align="center">{row.strikingLimb}</TableCell>
-                <TableCell align="center">{row.level}</TableCell>
-                <TableCell align="center">{row.damage}</TableCell>
-                <TableCell align="center">{row.accuracy}</TableCell>
-                <TableCell align="center">{row.energyCost}</TableCell>
-                <TableCell align="center">{row.criticalChance}</TableCell>
-                <TableCell align="center">{row.hypeOnTargetHit}</TableCell>
-                <TableCell align="center">{row.throws}</TableCell>
-                <TableCell align="center">{row.targetHits}</TableCell>
-                <TableCell align="center">{row.hits}</TableCell>
-                <TableCell align="center">{row.misses}</TableCell>
-                <TableCell align="center">{row.hitRate}</TableCell>
-                <TableCell align="center">{row.targetHitRate}</TableCell>
-                <TableCell align="center">{row.missRate}</TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
     </Box>
-    // <Box display="flex">
-    //   <TableContainer>
-    //     <Table aria-label="simple table" size="small" stickyHeader={true} sx={{overflowX: "auto"}}>
-    //       <TableHead>
-    //         <TableRow>
-    //           <TableCell>Move</TableCell>
-    //           <TableCell align="right">Targets</TableCell>
-    //           <TableCell align="right">Striking Limb</TableCell>
-    //           <TableCell align="right">Level</TableCell>
-    //           <TableCell align="right">Damage</TableCell>
-    //           <TableCell align="right">Accuracy*</TableCell>
-    //           <TableCell align="right">Energy Cost</TableCell>
-    //           <TableCell align="right">Critical Hit Chance</TableCell>
-    //           <TableCell align="right">Hype On Target Hit</TableCell>
-    //           <TableCell align="right">Throws</TableCell>
-    //           <TableCell align="right">Target Hits</TableCell>
-    //           <TableCell align="right">Hits</TableCell>
-    //           <TableCell align="right">Misses</TableCell>
-    //           <TableCell align="right">Hit %</TableCell>
-    //           <TableCell align="right">Target Hit %</TableCell>
-    //           <TableCell align="right">Miss %</TableCell>
-    //         </TableRow>
-    //       </TableHead>
-    //       <TableBody>
-
-    //       </TableBody>
-    //     </Table>
-    //   </TableContainer>
-    // </Box>
   );
 };
 

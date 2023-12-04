@@ -1,30 +1,24 @@
-import { TableRows } from "@mui/icons-material";
 import {
   Box,
   LinearProgress,
-  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Typography,
 } from "@mui/material";
 import { Attributes } from "promotion/pages/Roster";
 import React from "react";
+import { Table } from "react-bootstrap";
+
+import '../components/SkillsTable.css';
 
 const AttributesTable = ({ attributes }) => {
   const AttributeRow = ({ attributeType }) => {
     return (
-      <TableRow
+      <tr
         key={attributeType}
-        sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
       >
-        <TableCell align="left">{attributeType}</TableCell>
-        <TableCell align="left">{attributes[attributeType].level}</TableCell>
-        <TableCell align="left">
+        <td align="left">{attributeType}</td>
+        <td align="left">{attributes[attributeType].level}</td>
+        <td align="left">
           <Stack justifyContent="center">
             <LinearProgress
               variant="determinate"
@@ -41,38 +35,30 @@ const AttributesTable = ({ attributes }) => {
               </Typography>
             </Box>
           </Stack>
-        </TableCell>
-      </TableRow>
+        </td>
+      </tr>
     );
   };
-
   return (
-    <Box>
-      <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
-        <Table size="small" stickyHeader={true}>
-          <TableHead>
-            <TableRow>
-              <TableCell align="center" colSpan={3}>
-                Attributes
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell align="left">Attribute</TableCell>
-              <TableCell align="left">Level</TableCell>
-              <TableCell align="left">Exp</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <AttributeRow attributeType={Attributes.Strength} />
-            <AttributeRow attributeType={Attributes.Speed} />
-            <AttributeRow attributeType={Attributes.Durability} />
-            <AttributeRow attributeType={Attributes.Endurance} />
-            <AttributeRow attributeType={Attributes.Accuracy} />
-            <AttributeRow attributeType={Attributes.Charm} />
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Box>
+    <div style={{ height: '100%', width: '80%', border: '1px solid #ccc', overflowY: 'auto' }}>
+      <Table striped bordered hover className="tableFixHead">
+        <thead>
+          <tr>
+            <th>Attribute</th>
+            <th>Level</th>
+            <th>Exp</th>
+          </tr>
+        </thead>
+        <tbody>
+          <AttributeRow attributeType={Attributes.Strength} />
+          <AttributeRow attributeType={Attributes.Speed} />
+          <AttributeRow attributeType={Attributes.Durability} />
+          <AttributeRow attributeType={Attributes.Endurance} />
+          <AttributeRow attributeType={Attributes.Accuracy} />
+          <AttributeRow attributeType={Attributes.Charm} />
+        </tbody>
+      </Table>
+    </div >
   );
 };
 

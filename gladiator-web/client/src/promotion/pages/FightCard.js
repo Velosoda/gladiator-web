@@ -595,7 +595,7 @@ const FightCard = () => {
             <Button
               onClick={CreateNewFightCard}
               variant="contained"
-              disabled={selectedDateTime == tomorrow}
+              disabled={selectedDateTime === tomorrow}
             >
               Submit
             </Button>

@@ -1,28 +1,23 @@
 import {
   Box,
   LinearProgress,
-  Paper,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Typography,
 } from "@mui/material";
 import { LimbTypes } from "promotion/pages/Roster";
 import React from "react";
+import { Table } from "react-bootstrap";
+
+import '../components/SkillsTable.css';
 
 const HealthTable = ({ health }) => {
   const HealthRow = ({ limbType }) => {
     return (
-      <TableRow
+      <tr
         key={limbType}
-        sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
       >
-        <TableCell align="left">{limbType}</TableCell>
-        <TableCell align="left">
+        <td align="left">{limbType}</td>
+        <td align="left">
           <Stack justifyContent="center">
             <LinearProgress
               variant="determinate"
@@ -39,38 +34,31 @@ const HealthTable = ({ health }) => {
               </Typography>
             </Box>
           </Stack>
-        </TableCell>
-        <TableCell align="left">{health.limbs[limbType].isSevered}</TableCell>
-      </TableRow>
+        </td>
+        <td align="left">{health.limbs[limbType].isSevered}</td>
+      </tr>
     );
   };
   return (
-    <Box>
-      <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
-        <Table size="small" stickyHeader={true}>
-          <TableHead>
-            <TableRow>
-              <TableCell align="center" colSpan={3}>
-                Health
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell align="left">Limb</TableCell>
-              <TableCell align="left">Health</TableCell>
-              <TableCell align="left">isSevered?</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <HealthRow limbType={LimbTypes.Head} />
-            <HealthRow limbType={LimbTypes.Torso} />
-            <HealthRow limbType={LimbTypes.LeftArm} />
-            <HealthRow limbType={LimbTypes.RightArm} />
-            <HealthRow limbType={LimbTypes.LeftLeg} />
-            <HealthRow limbType={LimbTypes.RightLeg} />
-          </TableBody>
-        </Table>
-      </TableContainer>
-    </Box>
+    <div style={{ height: '100%', width: '80%', border: '1px solid #ccc', overflowY: 'auto' }}>
+      <Table striped bordered hover className="tableFixHead">
+        <thead>
+          <tr>
+            <th>Limb</th>
+            <th>Health</th>
+            <th>isSevered?</th>
+          </tr>
+        </thead>
+        <tbody>
+          <HealthRow limbType={LimbTypes.Head} />
+          <HealthRow limbType={LimbTypes.Torso} />
+          <HealthRow limbType={LimbTypes.LeftArm} />
+          <HealthRow limbType={LimbTypes.RightArm} />
+          <HealthRow limbType={LimbTypes.LeftLeg} />
+          <HealthRow limbType={LimbTypes.RightLeg} />
+        </tbody>
+      </Table>
+    </div >
   );
 };
 

@@ -1,0 +1,59 @@
+.toggle-section {
+    border: 1px solid #ccc;
+    padding: 16px;
+    margin: 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    justify-items: center;
+    text-align: center;
+}
+
+.page-container {
+    padding: 16px;
+}
+
+.marker-data {
+    flex: 1;
+    padding: 16px;
+    border: 1px solid #ccc;
+    margin: 8px;
+    text-align: center;
+}
+
+.marker-data-button {
+    flex: 1;
+    padding: 16px;
+    margin: 8px;
+    text-align: center;
+}
+
+h2 {
+    font-size: 18px;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.MuiToggleButton-root {
+    border-radius: 4px;
+    margin-right: 8px;
+}
+
+.MuiToggleButtonGroup-root {
+    display: flex;
+}
+
+.log-container {
+    border: 1px solid #ccc;
+    padding: 16px;
+    margin: 16px;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+}
+
+.log-content {
+    max-height: 200px;
+    /* Set a max height and add overflow-y to create a scrollable log */
+    overflow-y: auto;
+}

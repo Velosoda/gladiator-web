@@ -1,37 +1,26 @@
-require('dotenv').config();
-var http = require('http'),
-    path = require('path'),
-    methods = require('methods'),
-    express = require('express'),
-    bodyParser = require('body-parser'),
-    session = require('express-session'),
-    cors = require('cors'),
-    passport = require('passport'),
-    errorhandler = require('errorhandler'),
-    mongoose = require('mongoose');
-    logger = require('morgan');
+require('dotenv').config()
+const express = require('express');
+const bodyParser = require('body-parser');
+const mongoose = require("mongoose");
+const HttpError = require('./models/http-error');
 
-const MongoStore = require("connect-mongo");
-
-var isProduction = process.env.NODE_ENV === 'production';
-
-// Create global app object
-var app = express();
-
-app.use(cors());
-
-// Normal express config defaults
-app.use(require('morgan')('dev'));
-app.use(bodyParser.urlencoded({ extended: false }));
+const app = express();
 app.use(bodyParser.json());
 
-app.use(require('method-override')());
-app.use(express.static(path.join(__dirname, 'public')));
+require('./models/Move');
+require('./models/PracticePerson');
+require('./models/Fighter');
+require('./models/Attacks');
 
+const movesRoutes = require('./routes/api/moves');
+const practiceRoutes = require('./routes/api/practice');
+const fightersRoutes = require('./routes/api/fighters');
 
-if (!isProduction) {
-  app.use(errorhandler());
-}
+app.use('/api/moves', movesRoutes);
+app.use('/api/practice', practiceRoutes);
+app.use('/api/fighters', fightersRoutes);
+
+var isProduction = process.env.NODE_ENV === 'production';
 
 var uri = ""
 if(isProduction){
@@ -41,62 +30,22 @@ if(isProduction){
   const mongoPassword = process.env.MONGO_DB_PASSWORD
   const mongoAddress = process.env.MONGO_DB_ADDRESS
   uri = `mongodb+srv://${mongoUser}:${mongoPassword}@${mongoAddress}/?retryWrites=true&w=majority`;
+
   mongoose.connect(uri);
   mongoose.set('debug', true);
 }
 
-require('./models/User');
-require('./models/PracticePerson');
-require('./config/passport');
-
-app.use(session({
-  secret: 'im not sure what this is ',
-  cookie: { maxAge: 60000 },
-  resave: false, 
-  saveUninitialized: false,
-  store: MongoStore.create({
-    mongoUrl: uri,
-    ttl: 14 * 24 * 60 * 60,
-    autoRemove: 'native' 
-  })
-}));
-
-app.use(passport.authenticate('session'));
-
-app.use(require('./routes'));
-
-/// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  var err = new Error('Not Found');
-  err.status = 404;
-  next(err);
+app.use((req, res, next) => {
+  const error = new HttpError('Could not find this route.', 404);
+  throw error;
 });
 
-/// error handlers
-
-// development error handler
-// will print stacktrace
-if (!isProduction) {
-  app.use(function(err, req, res, next) {
-    console.log(err.stack);
-
-    res.status(err.status || 500);
-
-    res.json({'errors': {
-      message: err.message,
-      error: err
-    }});
-  });
-}
-
-// production error handler
-// no stacktraces leaked to user
-app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
-  res.json({'errors': {
-    message: err.message,
-    error: {}
-  }});
+app.use((error, req, res, next) => {
+  if (res.headerSent) {
+    return next(error);
+  }
+  res.status(error.code || 500)
+  res.json({message: error.message || 'An unknown error occurred!'});
 });
 
 // finally, let's start our server...

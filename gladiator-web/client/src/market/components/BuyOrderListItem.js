@@ -18,9 +18,8 @@ const BuyOrderListItem = ({ assetType, conditions }) => {
       <Divider />
         <Typography variant="subtitle1" > Conditions: </Typography>
         {conditions.map((i, value) => {
-            console.log(i,value)
             return(
-                <Box>
+                <Box key={value}>
                     <Typography variant="body1"> {value} </Typography>
                 </Box>
             );

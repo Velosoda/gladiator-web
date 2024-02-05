@@ -1,20 +1,13 @@
-import { ArrowDropDown } from "@mui/icons-material";
+
 import {
   Box,
   Button,
   Collapse,
-  FormControl,
-  IconButton,
-  InputLabel,
-  MenuItem,
-  Select,
   Stack,
-  Typography,
 } from "@mui/material";
 import BuyOrderListItem from "market/components/BuyOrderListItem";
 import React, { useState } from "react";
-import Demo from "../components/index";
-import "@react-awesome-query-builder/ui/css/styles.scss";
+import BuyOrderForm from "market/components/BuyOrderForm";
 
 
 export const AssetType = {
@@ -44,45 +37,13 @@ const buyOrders = [
   },
 ];
 
-// const trainerFields = [];
-// const consumableFields = [];
-// const buildingfields = [];
-// const weaponFields = [];
-// const armourFields = [];
-
-// const configMap = {
-//   [AssetType.Fighter]: loadedConfig,
-//   [AssetType.Trainer]: loadedConfig,
-//   [AssetType.Consumable]: loadedConfig,
-//   [AssetType.Building]: loadedConfig,
-//   [AssetType.Weapon]: loadedConfig,
-//   [AssetType.Armour]: loadedConfig,
-// };
-
 const Buy = (props) => {
   // const [flexFightCards, setFlexFightCards] = useState(fightCards);
   const [expandCreateBuyOrderForm, setExpandCreateBuyOrderForm] =
     useState(false);
-  const [assetType, setAssetType] = useState();
 
-  const [conditions, setConditions] = useState();
   const [flexBuyOrders, setFlexBuyOrders] = useState(buyOrders)
 
-  const handleSetAssetType = (event) => {
-    setAssetType(event.target.value);
-  };
-
-  const CreateBuyOrder = () => {
-    const res = {
-      assetType: assetType,
-      constraints: conditions
-    };
-    console.log(res);
-    buyOrders.push(res);
-    const newBuyOrders = buyOrders;
-
-    setFlexBuyOrders(newBuyOrders);
-  };
 
   return (
     <Box>
@@ -95,37 +56,7 @@ const Buy = (props) => {
           Create A New Buy Order
         </Button>
         <Collapse in={expandCreateBuyOrderForm}>
-          <Stack
-            spacing={3}
-            useFlexGap
-            maxHeight={1000}
-            maxWidth="100%"
-            border={2}
-            p={2}
-            borderRadius={3}
-            overflow="scroll"
-          >
-            <Typography>Select an Asset Type to begin</Typography>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Asset Type</InputLabel>
-              <Select
-                id="asset-type"
-                value={assetType}
-                label="Asset Type"
-                onChange={handleSetAssetType}
-              >
-                {Object.keys(AssetType).map((key, index) => {
-                  return <MenuItem value={key}>{key}</MenuItem>;
-                })}
-              </Select>
-            </FormControl>
-            <Box>
-              <Demo setConditions={setConditions}/>
-            </Box>
-            <Button onClick={CreateBuyOrder} variant="contained">
-              Create
-            </Button>
-          </Stack>
+          <BuyOrderForm/>
         </Collapse>
         {flexBuyOrders.map((item, key) => (
           <Box key={key}>

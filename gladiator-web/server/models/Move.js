@@ -1,11 +1,13 @@
 const mongoose = require('mongoose');
-const { LimbTypes } = require('./Fighter');
+const { LimbTypes, DisciplineTypes, CombatCategoryTypes } = require('./Fighter');
 
 const { Schema } = mongoose;
 
 const MoveList = [
     {
-        name: 'Boxing-Jab',
+        category: CombatCategoryTypes.Unarmed,
+        discipline: DisciplineTypes.Boxing,
+        name: 'Jab',
         targets: [LimbTypes.Head, LimbTypes.Torso],
         strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
         baseMoveDamage: 5,
@@ -16,7 +18,9 @@ const MoveList = [
         hypeOnTargetHit: 5,
     },
     {
-        name: 'Boxing-Hook',
+        category: CombatCategoryTypes.Unarmed,
+        discipline: DisciplineTypes.Boxing,
+        name: 'Cross',
         targets: [LimbTypes.Head, LimbTypes.Torso],
         strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
         baseMoveDamage: 5,
@@ -27,7 +31,22 @@ const MoveList = [
         hypeOnTargetHit: 5,
     },
     {
-        name: 'Boxing-Block',
+        category: CombatCategoryTypes.Unarmed,
+        discipline: DisciplineTypes.Boxing,
+        name: 'Hook',
+        targets: [LimbTypes.Head, LimbTypes.Torso],
+        strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
+        baseMoveDamage: 10,
+        expPerLand: 4,
+        energyCost: 10,
+        criticalChance: 10,
+        canSevereLimb: false,
+        hypeOnTargetHit: 8,
+    },
+    {
+        category: CombatCategoryTypes.Unarmed,
+        discipline: DisciplineTypes.Boxing,
+        name: 'Block',
         targets: [LimbTypes.Head, LimbTypes.Torso],
         strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
         baseMoveDamage: 40,
@@ -40,6 +59,14 @@ const MoveList = [
 ];
 
 const MoveSchema = new Schema({
+    category: {
+        type: String,
+        enum: Object.values(CombatCategoryTypes), // Enum based on CombatCategoryTypes object
+    },
+    discipline:{
+        type: String,
+        enum: Object.values(DisciplineTypes)
+    },
     name: {
         type: String,
         required: true,

@@ -1,6 +1,7 @@
 var router = require('express').Router();
 
 const FighterService = require('../../services/fighterService');
+var service = new FighterService();
 
 router.get('/test', async (req, res) => {
     console.log("test!");
@@ -8,27 +9,42 @@ router.get('/test', async (req, res) => {
     return;
 })
 
-router.post('/refresh', async (req, res) => {
+router.put('/refresh', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
     try {
-        const data = await FighterService.refreshFighterPool(2);
+        const data = await service.refreshFighterPool();
         res.json(data);
-
+        
+        return data;
+    } catch (error) {
+        res.status(500).json({ message: error.message })
+    }
+});
+router.put('/refresh/:count', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    try {
+        const { count } = req.params;
+        const data = await service.refreshFighterPool(count);
+        
+        res.json(data);
+        return data;
     } catch (error) {
         res.status(500).json({ message: error.message })
     }
 });
 
 router.get('/:fighterId', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
     try {
         const { fighterId } = req.params;
-
+        
         //Check to see if fighter exists
-        const fighter = await FighterService.getFighterById(fighterId);
+        const fighter = await service.getFighterById(fighterId);
         if (fighter == null) {
             res.json(null);
         }
         res.json(fighter);
-        return fighter;
+        return JSON.stringify(fighter);;
     } catch (error) {
         res.status(500).json({ message: error.message })
         throw error;
@@ -36,16 +52,17 @@ router.get('/:fighterId', async (req, res) => {
 });
 
 router.get('/:fighterId/disciplineAvg', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
     try {
         const { fighterId } = req.params;
-
+        
         //Check to see if fighter exists
-        const fighter = await FighterService.getFighterById(fighterId);
+        const fighter = await service.getFighterById(fighterId);
         if (fighter == null) {
             res.json(null);
         }
-
-        const disciplineAvg = FighterService.getCombatSkillAverage(fighter);
+        
+        const disciplineAvg = service.getCombatSkillAverage(fighter);
         res.json(disciplineAvg);
         return disciplineAvg;
     } catch (error) {
@@ -55,17 +72,18 @@ router.get('/:fighterId/disciplineAvg', async (req, res) => {
 });
 
 router.get('/:fighterId/combatSkills', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
     try {
         const { fighterId } = req.params;
 
         //Check to see if fighter exists
-        const fighter = await FighterService.getFighterById(fighterId);
+        const fighter = await service.getFighterById(fighterId);
         if (fighter == null) {
             res.json(null);
         }
 
         res.json(fighter.combatSkills);
-        return fighter.combatSkills;
+        return JSON.stringify(fighter);
     } catch (error) {
         res.status(500).json({ message: error.message })
         throw error;

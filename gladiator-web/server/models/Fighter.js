@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
+const INITIAL_ATTRIBUTE_POINTS = 15;
+
 const LimbTypes = {
     Head: 'Head',
     Torso: 'Torso',
@@ -19,111 +21,136 @@ const AttributeTypes = {
     Charm: "Charm",
 };
 
-const CombatCategories = {
-    Unarmed: {
-        Boxing: "Boxing",
-        Wrestling: "Wrestling",
-        Kicking: "Kicking",
-        Dirty: "Dirty",
-    },
-    Ranged: {
-        ...this.Unarmed,
-        Archery: "Archery",
-        Gunmanship: "Gunmanship",
-        EnergyWeaponry: "Energy Weaponry",
-    },
-    Melee: {
-        ...this.Unarmed, // Include everything from Unarmed
-        SingleHanded: "Single Handed",
-        DualWielding: "Dual Wielding",
-        TwoHanded: "Two Handed",
-    },
+const DisciplineTypes = {
+    Boxing: "Boxing",
+    Wrestling: "Wrestling",
+    Kicking: "Kicking",
+    Dirty: "Dirty",
+    Archery: "Archery",
+    Gunmanship: "Gunmanship",
+    EnergyWeaponry: "Energy Weaponry",
+    SingleHanded: "Single Handed",
+    DualWielding: "Dual Wielding",
+    TwoHanded: "Two Handed",
 };
 
-
-const defaultStats = () => {
-    return {
-        level: 0,
-        // move: move,
-        currentExp: 0,
-        expToNexLevel: 15,
-        throws: 0,
-        hits: 0,
-        targetHits: 0,
-        misses: 0,
-        damage: 0,
-        hitRate: 0.0,
-        targetHitRate: 0.0,
-        missRate: 0.0,
-    }
-}
-
-const getDefaultAttacks = () => {
-    return {
-        Unarmed: {
-            Boxing: [
-                {
-                    name: "Jab",
-                    ...defaultStats()
-                },
-                {
-                    name: "Hook",
-                    ...defaultStats()
-                },
-                {
-                    name: "Block",
-                    ...defaultStats()
-                },
-            ],
-            Wrestling: [],
-            Kicking: [],
-            Dirty: [],
-        },
-        Ranged: {
-            Archery: [],
-            Gunmanship: [],
-            EnergyWeaponry: [],
-        },
-        Melee: {
-            SingleHanded: [],
-            DualWielding: [],
-            TwoHanded: [],
-        }
-    }
-}
-
-const limbSchema = {
-    currentHealth: 100,
-    overallHealth: 100,
-    isSevered: false,
-    canBeSevered: true,
-    pointValue: 2
+const CombatCategoryTypes = {
+    Unarmed: "Unarmed",
+    Ranged: "Ranged",
+    Melee: "Melee",
 };
 
-const attributesSchema = {
-    level: 0,
-    currentExp: 0,
-    expToNextLevel: 5
-}
+const LimbSchema = new Schema({
+    name: {
+        type: String,
+        enum: Object.values(LimbTypes), // Enum based on LimbTypes object
+    },
+    regenerativeHealth: {
+        type: Number,
+        default: 100 // Default regenerativeHealth value
+    },
+    healthLimit: {
+        type: Number,
+        default: 100 // Default healthLimit value
+    },
+    healthLifetimeLimit: {
+        type: Number,
+        default: 100 // Default healthLifetimeLimit value
+    },
+    isSevered: {
+        type: Boolean,
+        default: false // Default isSevered value
+    },
+    canBeSevered: {
+        type: Boolean,
+        default: true // Default canBeSevered value
+    },
+    pointValue: {
+        type: Number,
+        default: 2 // Default pointValue value
+    }
+});
 
-// const attacksSchema = new Schema({
-//     name: String,
-//     level: Number,
-//     currentExp: Number,
-//     expToNextLevel: Number,
-//     throws: Number,
-//     targetHits: Number,
-//     hits: Number,
-//     misses: Number,
-//     damage: Number,
-//     hitRate: Number,
-//     targetHitRate: Number,
-//     missRate: Number,
-// });
+const AttributesSchema = new Schema({
+    name: {
+        type: String,
+        enum: Object.values(AttributeTypes), // Enum based on LimbTypes object
+    },
+    value: {
+        type: Number,
+        default: INITIAL_ATTRIBUTE_POINTS // Default value
+    },
+    derivedStatistics: {
+        type: [String], // Array of strings
+        default: [] // Default empty array
+    },
+    effects: {
+        type: Number,
+        default: 0 // Default effects value
+    }
+});
 
-const nameGenerator = () => {
-    return
-}
+const CombatSkillsSchema = new Schema({
+    category: {
+        type: String,
+        enum: Object.values(CombatCategoryTypes), // Enum based on CombatCategoryTypes object
+    },
+    discipline:{
+        type: String,
+        enum: Object.values(DisciplineTypes)
+    },
+    moveStatistics: {
+        moveName: {
+            type: String,
+            default: "" // Default name value
+        },
+        level: {
+            type: Number,
+            default: 0 // Default level value
+        },
+        currentExp: {
+            type: Number,
+            default: 0 // Default currentExp value
+        },
+        expToNexLevel: {
+            type: Number,
+            default: 15 // Default expToNexLevel value
+        },
+        throws: {
+            type: Number,
+            default: 0 // Default throws value
+        },
+        hits: {
+            type: Number,
+            default: 0 // Default hits value
+        },
+        targetHits: {
+            type: Number,
+            default: 0 // Default targetHits value
+        },
+        misses: {
+            type: Number,
+            default: 0 // Default misses value
+        },
+        damage: {
+            type: Number,
+            default: 0 // Default damage value
+        },
+        hitRate: {
+            type: Number,
+            default: 0.0 // Default hitRate value
+        },
+        targetHitRate: {
+            type: Number,
+            default: 0.0 // Default targetHitRate value
+        },
+        missRate: {
+            type: Number,
+            default: 0.0 // Default missRate value
+        },
+    }
+});
+
 const FighterSchema = new Schema(
     {
         name: {
@@ -131,7 +158,8 @@ const FighterSchema = new Schema(
             default: ""
         },
         speed: {
-            type: Number
+            type: Number,
+            default: 0
         },
         popularity: {
             type: Number,
@@ -160,78 +188,27 @@ const FighterSchema = new Schema(
                 type: Boolean,
                 default: false
             },
-            limbs: {
-                type: Object,
-                default: Object.keys(LimbTypes).reduce((limbs, limb) => ({ ...limbs, [limb]: limbSchema }), {}),
-            }
+            limbs: [LimbSchema],
         },
         attributes: {
-            type: Object,
-            default: Object.keys(AttributeTypes).reduce((attrs, attr) => ({ ...attrs, [attr]: attributesSchema }), {}),
+            availablePoints: {
+                type: "Number",
+                default: 15
+            },
+            attributesList: [AttributesSchema]
         },
-        combatSkills: {
-            type: Object,
-            default: Object.entries(CombatCategories).reduce((categories, [category, categoryValue]) => {
-                console.log(`Processing category: ${category}`);
-                const defaultAttacks = getDefaultAttacks();
-
-                const defaultAttacksForDiscipline = defaultAttacks[category];
-
-                if (!defaultAttacksForDiscipline) {
-                    console.error(`No default attacks found for category: ${category}`);
-                    return categories;
-                }
-
-                const categorySchema = Object.keys(categoryValue).reduce(
-                    (disciplines, discipline) => {
-                        console.log(`  Processing discipline: ${discipline}`);
-
-                        const defaultAttacksForDiscipline = defaultAttacks[category][discipline];
-
-                        if (!defaultAttacksForDiscipline) {
-                            console.error(`    No default attacks found for discipline: ${discipline}`);
-                            return disciplines;
-                        }
-
-                        const disciplineSchema = defaultAttacksForDiscipline.map( (defaultAttack) => {
-                            return {
-                                ...defaultAttack,
-                            };
-                        });
-
-                        return {
-                            ...disciplines,
-                            [discipline]: disciplineSchema,
-                        };
-                    },
-                    {}
-                );
-
-                return { ...categories, [category]: categorySchema };
-            }, {}),
-        }
+        combatSkills: [CombatSkillsSchema]
     }
 );
 
-// FighterSchema.statics.RefreshFighterPool = async function (count) {
-//     // try {
-//     //     const fightersFound = await this.countDocuments(); 
-
-//     //     // if(fightersFound < count){
-//     //     //     for(let i = i)
-//     //     // }
-
-//     //     console.log("Fighters Found " + fightersFound)
-
-//     //     await FighterSchema.
-
-
-//     // } catch (error) {
-
-//     // }
-// };
-
 module.exports = mongoose.model('Fighter', FighterSchema);
+module.exports = mongoose.model('Attribute', AttributesSchema);
+module.exports = mongoose.model('Limb', LimbSchema);
+module.exports = mongoose.model('CombatSkills', CombatSkillsSchema);
 module.exports = {
-    LimbTypes
+    LimbTypes,
+    AttributeTypes,
+    CombatCategoryTypes,
+    DisciplineTypes,
+    INITIAL_ATTRIBUTE_POINTS,
 };

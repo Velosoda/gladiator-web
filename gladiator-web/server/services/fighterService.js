@@ -1,10 +1,38 @@
 var mongoose = require('mongoose');
 const Chance = require('chance');
 const Fighter = mongoose.model('Fighter');
+const Limb = mongoose.model('Limb');
+const CombatSkills = mongoose.model('CombatSkills');
+const Attribute = mongoose.model('Attribute');
 const Move = require('../models/Move');
+const {
+    LimbTypes,
+    AttributeTypes,
+    CombatCategoryTypes,
+    DisciplineTypes,
+    INITIAL_ATTRIBUTE_POINTS
+} = require('../models/Fighter');
 
 const chance = new Chance();
-const { ObjectId } = mongoose.Types;
+
+const CombatCategories = {
+    [CombatCategoryTypes.Unarmed]: [
+        DisciplineTypes.Boxing,
+        DisciplineTypes.Wrestling,
+        DisciplineTypes.Kicking,
+        DisciplineTypes.Dirty
+    ],
+    [CombatCategoryTypes.Ranged]: [
+        DisciplineTypes.Archery,
+        DisciplineTypes.Gunmanship,
+        DisciplineTypes.EnergyWeaponry
+    ],
+    [CombatCategoryTypes.Melee]: [
+        DisciplineTypes.SingleHanded,
+        DisciplineTypes.DualWielding,
+        DisciplineTypes.TwoHanded,
+    ]
+};
 
 function getRandomInt(min, max) {
     // min is inclusive, max is exclusive
@@ -21,62 +49,120 @@ function generateStats() {
     const hits = throws - getRandomInt(1, throws);
     const targetHits = hits - getRandomInt(1, hits);
     const misses = throws - hits;
+    const expToNexLevel = level * 15;
 
     return {
         level: level,
-        currentExp: 0,
+        currentExp: getRandomInt(0, expToNexLevel - 1),
         expToNexLevel: level * 15,
         throws: throws,
         hits: hits,
         targetHits: targetHits,
         misses: misses,
-        damage: 0,
         hitRate: hundredthsSlice((hits / throws) * 100),
         targetHitRate: hundredthsSlice((targetHits / throws) * 100),
         missRate: hundredthsSlice((misses / throws) * 100),
     }
 }
-function setGeneratedCombatSkills() {
-    return {
-        Unarmed: {
-            Boxing: [
-                {
-                    name: "Jab",
-                    ...generateStats()
-                },
-                {
-                    name: "Hook",
-                    ...generateStats()
-                },
-                {
-                    name: "Cross",
-                    ...generateStats()
-                },
-                {
-                    name: "Block",
-                    ...generateStats()
-                },
-            ],
-            Wrestling: [],
-            Kicking: [],
-            Dirty: [],
-        },
-        Ranged: {
-            Archery: [],
-            Gunmanship: [],
-            EnergyWeaponry: [],
-        },
-        Melee: {
-            SingleHanded: [],
-            DualWielding: [],
-            TwoHanded: [],
+
+function initializeLimbs() {
+    var limbs = []
+    Object.values(LimbTypes).map(limbType => {
+        let pointValue = 2; // Default point value for arms and legs
+
+        if (limbType === LimbTypes.Head || limbType === LimbTypes.Torso) {
+            pointValue = 5;
+        } else if (limbType.includes('Arm')) {
+            pointValue = 2;
+        } else if (limbType.includes('Leg')) {
+            pointValue = 3;
         }
-    }
+
+        limbs.push(new Limb({
+            name: limbType,
+            regenerativeHealth: 100,
+            healthLimit: 100,
+            healthLifetimeLimit: 100,
+            isSevered: false,
+            canBeSevered: true,
+            pointValue: pointValue
+        }));
+    });
+    return limbs;
 }
 
+async function initializeCombatSkills() {
+    const combatSkillsInstances = [];
+
+    for (const [category, disciplines] of Object.entries(CombatCategories)) {
+        for (const discipline of disciplines) {
+            const currentMoveList = await Move.find({ category: category, discipline: discipline });
+            
+            console.log(`Category: ${category}, Discipline: ${discipline}`);
+            
+            for(const move of currentMoveList){
+                const stats = generateStats();
+                const combatSkillsInstance = new CombatSkills({
+                    category: category,
+                    discipline: discipline,
+                    moveStatistics: {
+                        moveName: move.name,
+                        level: stats.level,
+                        currentExp: stats.currentExp,
+                        expToNexLevel: stats.expToNexLevel,
+                        throws: stats.throws,
+                        hits: stats.hits,
+                        targetHits: stats.targetHits,
+                        misses: stats.misses,
+                        damage: move.baseMoveDamage,
+                        hitRate: stats.hitRate,
+                        targetHitRate: stats.targetHitRate,
+                        missRate: stats.missRate,
+                    }
+                });
+                combatSkillsInstances.push(combatSkillsInstance);
+            }
+        }
+    }
+
+    console.log("CombatSKills: ", combatSkillsInstances);
+    return combatSkillsInstances;
+}
+
+function initializeAttributes() {
+    var remainingAttributePoints = INITIAL_ATTRIBUTE_POINTS;
+    var attributes = [];
+    for (const [key, value] of Object.entries(AttributeTypes)) {
+        console.log(`Attribute: ${key}, Type: ${value}`);
+
+        const assignPoints = getRandomInt(1, remainingAttributePoints);
+        
+        if (remainingAttributePoints > 0) {
+            const attribute = new Attribute({
+                name: value,
+                value: assignPoints,
+                derivedStatistics: ["test"],
+                effects: 1
+            })
+            remainingAttributePoints -= assignPoints;
+            attributes.push(attribute);
+        }
+        else {
+            const attribute = new Attribute({
+                name: value,
+                value: assignPoints,
+                derivedStatistics: ["test"],
+                effects: 1
+            })
+            attributes.push(attribute);
+        }
+    }
+    // console.log("Attribute ", attributes);
+    return attributes;
+}
 
 class FighterService {
-    static getCombatSkillAverage(fighter) {
+    getCombatSkillAverage(fighter) {
         let res = {};
 
         const combatSkills = fighter.combatSkills;
@@ -85,7 +171,7 @@ class FighterService {
             // Iterate over the disciplines within each category
             for (const discipline in combatSkills[category]) {
                 let disciplineSum = 0;
-                
+
                 // Iterate over the attacks within each discipline
                 for (const attack of combatSkills[category][discipline]) {
                     disciplineSum += attack.level;
@@ -95,19 +181,22 @@ class FighterService {
         }
         return res;
     }
-    static async setMovesLearned(newFighter) {
-        const combatSkillAverageMap = this.getCombatSkillAverage(newFighter);
-        
-        return await Move.findMovesByCombatSkillAverage(combatSkillAverageMap);
-    };
 
-    static refreshFighterPool(count = 20) {
+    async refreshFighterPool(count = 20) {
         try {
             const fighters = Array.from({ length: count }, async () => {
-                const newFighter = new Fighter({
+                const combatSkills = await initializeCombatSkills();
+                const newFighter = await new Fighter({
                     name: chance.name({ gender: 'male' }),
-                    combatSkills: setGeneratedCombatSkills(),
+                    health: {
+                        limbs: initializeLimbs()
+                    },
+                    attributes: {
+                        attributesList: initializeAttributes()
+                    },
+                    combatSkills: combatSkills
                 });
+                console.log("Fighter: " , newFighter)
                 await newFighter.save();
             });
 
@@ -117,9 +206,16 @@ class FighterService {
             throw error;
         }
     }
-    static async getFighterById(id){
+
+    async setMovesLearned(newFighter) {
+        const combatSkillAverageMap = this.getCombatSkillAverage(newFighter);
+
+        return await Move.findMovesByCombatSkillAverage(combatSkillAverageMap);
+    };
+
+    async getFighterById(id) {
         try {
-            return await Fighter.findOne({_id: id});
+            return await Fighter.findOne({ _id: id });
         } catch (error) {
             console.log(`There was an issue trying to retrieve the fighter with id ${id}`);
             throw error;

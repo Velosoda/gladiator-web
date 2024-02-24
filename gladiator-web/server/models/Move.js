@@ -58,12 +58,17 @@ const MoveList = [
     },
 ];
 
+const RangeDamageTypes = {
+    Normal: "Normal",
+    Weak: "Weak"
+}
+
 const MoveSchema = new Schema({
     category: {
         type: String,
         enum: Object.values(CombatCategoryTypes), // Enum based on CombatCategoryTypes object
     },
-    discipline:{
+    discipline: {
         type: String,
         enum: Object.values(DisciplineTypes)
     },
@@ -109,6 +114,22 @@ const MoveSchema = new Schema({
         type: Number,
         required: true,
     },
+    rangePattern: [
+        {
+            rangeDamage: {
+                type: String,
+                enum: Object.values(RangeDamageTypes),
+            },
+            x: {
+                type: Number,
+                default: 0
+            },
+            y: {
+                type: Number,
+                default: 0
+            }
+        }
+    ]
 });
 
 MoveSchema.statics.Refresh = async function () {
@@ -133,14 +154,14 @@ MoveSchema.statics.Refresh = async function () {
 
 MoveSchema.statics.findMovesByCombatSkillAverage = async function (combatSkillAverageMap) {
     const moveSearchResults = [];
-  
+
     for (const [category, minLevel] of Object.entries(combatSkillAverageMap)) {
-      const moves = await this.find({ name: { $regex: category, $options: 'i' }, level: { $lt: minLevel } });
-      moveSearchResults.push(...moves);
+        const moves = await this.find({ name: { $regex: category, $options: 'i' }, level: { $lt: minLevel } });
+        moveSearchResults.push(...moves);
     }
-  
+
     return moveSearchResults;
-  };
-  
+};
+
 const Move = mongoose.model('Move', MoveSchema);
 module.exports = Move;

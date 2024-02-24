@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
+const Move = require('../models/Move');
+
 const INITIAL_ATTRIBUTE_POINTS = 15;
 
 const LimbTypes = {
@@ -11,6 +13,7 @@ const LimbTypes = {
     LeftLeg: 'LeftLeg',
     RightLeg: 'RightLeg',
 };
+
 
 const AttributeTypes = {
     Strength: "Strength",
@@ -95,14 +98,14 @@ const CombatSkillsSchema = new Schema({
         type: String,
         enum: Object.values(CombatCategoryTypes), // Enum based on CombatCategoryTypes object
     },
-    discipline:{
+    discipline: {
         type: String,
         enum: Object.values(DisciplineTypes)
     },
     moveStatistics: {
-        moveName: {
-            type: String,
-            default: "" // Default name value
+        move: {
+            type: Schema.Types.ObjectId,
+            ref: 'Move'
         },
         level: {
             type: Number,
@@ -184,6 +187,10 @@ const FighterSchema = new Schema(
             }
         },
         health: {
+            stamina: {
+                type: Number,
+                default: 100
+            },
             isDead: {
                 type: Boolean,
                 default: false
@@ -197,9 +204,112 @@ const FighterSchema = new Schema(
             },
             attributesList: [AttributesSchema]
         },
-        combatSkills: [CombatSkillsSchema]
+        combatSkills: [CombatSkillsSchema],
+        pastFights: [{
+            type: Schema.Types.ObjectId,
+            ref: 'Fight'
+        }]
+
     }
 );
+
+FighterSchema.methods.hasMovesInRange = async function (distance) {
+    const { xMod, yMod } = distance;
+    let res = [];
+
+    for (let i = 0; i < this.combatSkills.length; i++) {
+        const move = await Move.findById(this.combatSkills[i].moveStatistics.move);
+        for (let pattern of move.rangePatterns) {
+            if (pattern.x <= xMod && pattern.y <= yMod) {
+                res.append(move);
+                break;
+            }
+        }
+    }
+
+    return res;
+}
+//This needs to return the position to move to 
+//Should be moving towards the other fighter
+FighterSchema.methods.aiSelectCellToMoveTo = async function (fightFloor) {
+    let { x, y } = fightFloor.getFighterCords(this).cords;
+    let { xModifications: oppXDistance, yModifications: oppYDistance, opponentX, opponentY } = fightFloor.rangeToOpponent(x, y);
+    let movementAllowance = fightFloor.sizeExponent; //todo add some attribute that helps heree
+
+    // Calculate the distances between x, y and opponentX, opponentY
+    const xDistance = Math.abs(x - opponentX);
+    const yDistance = Math.abs(y - opponentY);
+
+    while (movementAllowance > 0) {
+        // Choose to move on the x or the y based on which requires fewer moves to reach the opponent
+        const chooseDirection = xDistance < yDistance ? 0 : 1;
+
+        // Movement along the X-axis
+        if (chooseDirection === 0 && oppXDistance !== 0) {
+            const stepX = oppXDistance > 0 ? 1 : -1;
+            x += stepX;
+            oppXDistance -= stepX;
+        }
+
+        // Movement along the Y-axis
+        if (chooseDirection === 1 && oppYDistance !== 0) {
+            const stepY = oppYDistance > 0 ? 1 : -1;
+            y += stepY;
+            oppYDistance -= stepY;
+        }
+
+        // Exit the loop if either coordinate is equal to the opponent's coordinate
+        if (x === opponentX || y === opponentY) {
+            break;
+        }
+
+        movementAllowance--;
+    }
+
+    return { x, y }
+};
+
+FighterSchema.methods.inFightRecovery = async function () {
+    const baseRecoveryPoints = 30
+    const totalRecoverPoints = this.attributes.Endurance + baseRecoveryRate;
+    const minUsage = Math.floor(totalRecoverPoints / 4);
+    const maxUsage = Math.floor(totalRecoverPoints / 2);
+
+    let remainingRecoverPoints = baseRecoveryPoints;
+
+    while (remainingRecoverPoints > 0) {
+        const limbI = 0;
+        const limbToRecover = this.health.limbs[limbI];
+
+        // Choose the maximum possible value within the range of minUsage and maxUsage
+        const valueToApply = Math.min(maxUsage, remainingRecoverPoints);
+
+        // If the chosen value exceeds minUsage, apply it
+        if (valueToApply >= minUsage) {
+
+            limbToRecover.regenerativeHealth += valueToApply
+            let leftOver = 0;
+
+            if (limbToRecover.regenerativeHealth > limbToRecover.healthLimit) {
+                leftOver = limbToRecover.regenerativeHealth - limbToRecover.healthLimit;
+                limbToRecover.regenerativeHealth -= leftOver;
+            }
+
+            remainingRecoverPoints -= valueToApply
+            remainingRecoverPoints += leftOver;
+        } else {
+            // If the chosen value is less than minUsage, break the loop
+            break;
+        }
+        limbI++;
+        if (limbI === this.health.limbs.length - 1) {
+            limbI = 0;
+        }
+    }
+    return this.save();
+};
+
+
 
 module.exports = mongoose.model('Fighter', FighterSchema);
 module.exports = mongoose.model('Attribute', AttributesSchema);

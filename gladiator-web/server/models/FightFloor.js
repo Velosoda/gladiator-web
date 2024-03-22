@@ -52,7 +52,7 @@ const FightFloorSchema = new Schema({
         default: 1
     },
     grid: [[CellSchema]],
-})
+});
 
 FightFloorSchema.methods.addFighters = async function (fighters) {
     fighters.forEach((fighter) => {
@@ -74,68 +74,91 @@ FightFloorSchema.methods.addFighters = async function (fighters) {
         }
     });
     return await this.save();
-}
+};
 
-FightFloorSchema.methods.getFighterCords = function (fighter) {
-    for (let rowIndex = 0; rowIndex < this.grid.length; rowIndex++) {
-        const row = this.grid[rowIndex];
+FightFloorSchema.methods.getFighterCords = function (fighterId) {
+    return GetFighterCords(fighterId, this);
+};
+
+function GetFighterCords (fighterId, fightFloor){
+    for (let rowIndex = 0; rowIndex < fightFloor.grid.length; rowIndex++) {
+        const row = fightFloor.grid[rowIndex];
         for (let colIndex = 0; colIndex < row.length; colIndex++) {
             const cell = row[colIndex];
 
-            if (cell.markers.some(marker => marker.type === MarkerTypes.Fighter && marker.value === fighter._id)) {
+            if (cell.markers.some((marker) => (marker.type === MarkerTypes.Fighter) && (marker.value === fighterId))){
                 return cell;
             }
         }
     }
 }
 
-FightFloorSchema.methods.rangeToOpponent = function (fromX, fromY) {
-    const queue = [{ xIndex: fromY, yIndex: fromX, distance: 0 }];
+FightFloorSchema.methods.move = async function(fighter, cord) {
+    const startingLocation = GetFighterCords(fighter._id, this);
+    
+    console.log({startingLocation, cord})
+
+    let markerToAdd;
+    //remove fighter from marker
+    this.grid[startingLocation.cords.y][startingLocation.cords.x].markers.forEach((marker)=> {
+        if(marker.type === MarkerTypes.Fighter){
+
+            markerToAdd = marker
+            this.grid[startingLocation.cords.y][startingLocation.cords.x].markers.remove(marker);
+        }
+    });
+
+    //add the fighter to the new marker
+    this.grid[cord.y][cord.x].markers.push(markerToAdd);
+
+    await this.save();
+    return this;
+};
+
+FightFloorSchema.methods.rangeToOpponent = function(startX, startY) {
+    const rows = this.grid.length;
+    const cols = this.grid[0].length;
+    const currentFighterMarker = this.grid[startY][startX].markers.find((marker) =>{
+        if(marker.type === MarkerTypes.Fighter){
+            return marker.value;
+        }
+    });
+    
     const visited = new Set();
-
-    let xModifications = 0;
-    let yModifications = 0;
-    let opponentX = 0;
-    let opponentY = 0;
-    let opponentId = null;
-
+    const queue = [{ x: startX, y: startY, stepsX: 0, stepsY: 0}];
+    
     while (queue.length > 0) {
-        const { xIndex, yIndex, distance } = queue.shift();
-        const cell = this.grid[yIndex][xIndex];
+        const { x, y, stepsX, stepsY} = queue.shift();
+        
+        visited.add(`${x},${y}`);
 
         // Check if the cell has a marker
-        for (const marker of cell.markers) {
-            if (marker.type === MarkerTypes.Fighter) {
-                opponentX = xIndex;
-                opponentY = yIndex;
-                opponentId = marker.value;
-                // Calculate xModifications and yModifications based on the direction of movement
-                xModifications = opponentX - fromX;
-                yModifications = opponentY - fromY;
-
-                //return values should be how humans interperate x and y
-                return { opponentX, opponentY, distance, xModifications, yModifications, opponentId };
+        for (const marker of this.grid[y][x].markers) {
+            if (marker.type === MarkerTypes.Fighter && marker.value != currentFighterMarker.value){
+                return {
+                    x,
+                    y, 
+                    stepsX,
+                    stepsY,
+                    opponentId: marker.value
+                };
             }
         }
-
-        // Enqueue neighboring cells
-        for (const [dx, dy] of [[0, -1], [0, 1], [-1, 0], [1, 0]]) {
-            const nx = yIndex + dy;
-            const ny = xIndex + dx;
-            const key = `${nx},${ny}`;
-            if (nx >= 0 && nx < this.grid.length && ny >= 0 && ny < this.grid[0].length && !visited.has(key)) {
-                visited.add(key);
-                queue.push({ xIndex: nx, yIndex: ny, distance: distance + 1 });
+        
+        const directions = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+       
+        for (const [dx, dy] of directions) {
+            const nx = x + dx;
+            const ny = y + dy;
+            
+            if (nx >= 0 && nx < cols && ny >= 0 && ny < rows && !visited.has(`${nx},${ny}`)) {
+                visited.add(`${nx},${ny}`);
+                queue.push({ x: nx, y: ny, stepsX: stepsX + dx, stepsY: stepsY + dy });
             }
         }
     }
-
-    // If no marker is found
     return null;
-}
-
-
-
+};
 
 module.exports = mongoose.model('FightFloor', FightFloorSchema);
 module.exports = mongoose.model('Marker', MarkerSchema);

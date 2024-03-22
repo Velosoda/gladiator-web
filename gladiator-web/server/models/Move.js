@@ -3,6 +3,11 @@ const { LimbTypes, DisciplineTypes, CombatCategoryTypes } = require('./Fighter')
 
 const { Schema } = mongoose;
 
+const RangeDamageTypes = {
+    Normal: "Normal",
+    Weak: "Weak"
+}
+
 const MoveList = [
     {
         category: CombatCategoryTypes.Unarmed,
@@ -16,6 +21,12 @@ const MoveList = [
         criticalChance: 5,
         canSevereLimb: false,
         hypeOnTargetHit: 5,
+        rangePattern: [
+            { rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 },
+            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 },
+            { rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 },
+            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 },
+        ]
     },
     {
         category: CombatCategoryTypes.Unarmed,
@@ -29,6 +40,12 @@ const MoveList = [
         criticalChance: 5,
         canSevereLimb: false,
         hypeOnTargetHit: 5,
+        rangePattern: [
+            { rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 },
+            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 },
+            { rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 },
+            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 },
+        ]
     },
     {
         category: CombatCategoryTypes.Unarmed,
@@ -42,6 +59,12 @@ const MoveList = [
         criticalChance: 10,
         canSevereLimb: false,
         hypeOnTargetHit: 8,
+        rangePattern: [
+            { rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 },
+            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 },
+            { rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 },
+            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 },
+        ]
     },
     {
         category: CombatCategoryTypes.Unarmed,
@@ -55,13 +78,15 @@ const MoveList = [
         criticalChance: 0,
         canSevereLimb: false,
         hypeOnTargetHit: 0,
+        rangePattern: [
+            { rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 },
+            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 },
+            { rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 },
+            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 },
+        ]
     },
 ];
 
-const RangeDamageTypes = {
-    Normal: "Normal",
-    Weak: "Weak"
-}
 
 const MoveSchema = new Schema({
     category: {
@@ -163,5 +188,31 @@ MoveSchema.statics.findMovesByCombatSkillAverage = async function (combatSkillAv
     return moveSearchResults;
 };
 
+//using the xDistance and yDistance see if this move is in range with its aoe
+MoveSchema.methods.inRange = async function (xDistance, yDistance) {
+
+    const isInRange = this.rangePattern.some((pattern) => {
+        const xDiff = xDistance - pattern.x;
+        const yDiff = yDistance - pattern.y;
+        return pattern.x >= xDistance && pattern.y >= yDistance;
+    });
+
+    console.log(isInRange);
+
+    return isInRange;
+}
+
+MoveSchema.methods.autoSelectPattern = async function(){
+    return this.rangePattern[Math.floor(Math.random() * this.rangePattern.length)];
+}
+MoveSchema.methods.autoSelectPatternTowardsOpponent = async function(){
+    return this.rangePattern[Math.floor(Math.random() * this.rangePattern.length)];
+}
+
 const Move = mongoose.model('Move', MoveSchema);
-module.exports = Move;
+module.exports = {
+    Move,
+    RangeDamageTypes,
+    MoveList,
+    RangeDamageTypes
+};

@@ -29,6 +29,7 @@ const DisciplineTypes = {
     Wrestling: "Wrestling",
     Kicking: "Kicking",
     Dirty: "Dirty",
+    Defence: "Defence",
     Archery: "Archery",
     Gunmanship: "Gunmanship",
     EnergyWeaponry: "Energy Weaponry",
@@ -38,9 +39,9 @@ const DisciplineTypes = {
 };
 
 const CombatCategoryTypes = {
-    Unarmed: "Unarmed",
-    Ranged: "Ranged",
-    Melee: "Melee",
+    Unarmed: 'Unarmed',
+    Ranged: 'Ranged',
+    Melee: 'Melee',
 };
 
 const LimbSchema = new Schema({
@@ -100,7 +101,7 @@ const CombatSkillsSchema = new Schema({
     },
     discipline: {
         type: String,
-        enum: Object.values(DisciplineTypes)
+        enum: Object.values(DisciplineTypes),
     },
     moveStatistics: {
         move: {
@@ -213,32 +214,18 @@ const FighterSchema = new Schema(
     }
 );
 
-FighterSchema.methods.hasMovesInRange = async function (distance) {
-    const { xMod, yMod } = distance;
-    let res = [];
-
-    for (let i = 0; i < this.combatSkills.length; i++) {
-        const move = await Move.findById(this.combatSkills[i].moveStatistics.move);
-        for (let pattern of move.rangePatterns) {
-            if (pattern.x <= xMod && pattern.y <= yMod) {
-                res.append(move);
-                break;
-            }
-        }
-    }
-
-    return res;
-}
 //This needs to return the position to move to 
 //Should be moving towards the other fighter
-FighterSchema.methods.aiSelectCellToMoveTo = async function (fightFloor) {
-    let { x, y } = fightFloor.getFighterCords(this).cords;
-    let { xModifications: oppXDistance, yModifications: oppYDistance, opponentX, opponentY } = fightFloor.rangeToOpponent(x, y);
+FighterSchema.methods.autoMoveToPosition = function (fightFloor) {
+    // console.log(fightFloor.getFighterCords(this._id.toString()).cords);
+
+    let { x, y } = fightFloor.getFighterCords(this._id.toString()).cords;
+    let { stepsX: oppXDistance, stepsY: oppYDistance, x: opponentX, y: opponentY, opponentId } = fightFloor.rangeToOpponent(x, y);
     let movementAllowance = fightFloor.sizeExponent; //todo add some attribute that helps heree
 
     // Calculate the distances between x, y and opponentX, opponentY
-    const xDistance = Math.abs(x - opponentX);
-    const yDistance = Math.abs(y - opponentY);
+    const xDistance = x - opponentX;
+    const yDistance = y - opponentY;
 
     while (movementAllowance > 0) {
         // Choose to move on the x or the y based on which requires fewer moves to reach the opponent
@@ -265,50 +252,90 @@ FighterSchema.methods.aiSelectCellToMoveTo = async function (fightFloor) {
 
         movementAllowance--;
     }
-
     return { x, y }
 };
 
 FighterSchema.methods.inFightRecovery = async function () {
-    const baseRecoveryPoints = 30
-    const totalRecoverPoints = this.attributes.Endurance + baseRecoveryRate;
+    const baseRecoveryPoints = 30.0
+    const totalRecoverPoints = this.attributes.attributesList.find((attribute) => attribute.name === AttributeTypes.Endurance).value + baseRecoveryPoints;
     const minUsage = Math.floor(totalRecoverPoints / 4);
     const maxUsage = Math.floor(totalRecoverPoints / 2);
 
-    let remainingRecoverPoints = baseRecoveryPoints;
+    let remainingRecoverPoints = totalRecoverPoints;
+    let limbI = LimbTypes.Head;
 
     while (remainingRecoverPoints > 0) {
-        const limbI = 0;
-        const limbToRecover = this.health.limbs[limbI];
+        let limbToRecover = this.health.limbs.find((limb) => limb.name === limbI);
 
-        // Choose the maximum possible value within the range of minUsage and maxUsage
-        const valueToApply = Math.min(maxUsage, remainingRecoverPoints);
+        // // Choose the maximum possible value within the range of minUsage and maxUsage
+        const randomValue = Math.random();
 
-        // If the chosen value exceeds minUsage, apply it
-        if (valueToApply >= minUsage) {
+        // console.log({remainingRecoverPoints, totalRecoverPoints, baseRecoveryPoints, minUsage, maxUsage, randomValue})
 
-            limbToRecover.regenerativeHealth += valueToApply
-            let leftOver = 0;
+        let valueToApply;
 
-            if (limbToRecover.regenerativeHealth > limbToRecover.healthLimit) {
-                leftOver = limbToRecover.regenerativeHealth - limbToRecover.healthLimit;
-                limbToRecover.regenerativeHealth -= leftOver;
-            }
-
-            remainingRecoverPoints -= valueToApply
-            remainingRecoverPoints += leftOver;
+        // If randomValue is less than 0.5, choose minUsage, otherwise choose maxUsage
+        if (randomValue < 0.5) {
+            valueToApply = minUsage;
         } else {
-            // If the chosen value is less than minUsage, break the loop
-            break;
+            valueToApply = maxUsage;
         }
-        limbI++;
-        if (limbI === this.health.limbs.length - 1) {
-            limbI = 0;
+
+        if (remainingRecoverPoints < minUsage) {
+            valueToApply = remainingRecoverPoints;
+        }
+
+        limbToRecover.regenerativeHealth += valueToApply;
+        let leftOver = 0;
+
+        if (limbToRecover.regenerativeHealth > limbToRecover.healthLimit) {
+            leftOver = limbToRecover.regenerativeHealth - limbToRecover.healthLimit;
+            limbToRecover.regenerativeHealth -= leftOver;
+        }
+
+        remainingRecoverPoints -= valueToApply
+        remainingRecoverPoints += leftOver;
+
+        limbToRecover = getNextLimb(limbToRecover)
+
+        if (limbToRecover === this.health.limbs.length - 1) {
+            limbI = LimbTypes.Head;
         }
     }
-    return this.save();
+    return await this.save();
 };
 
+FighterSchema.methods.autoSelectAttack = async function (availableAttacks) {
+    // Generate random number between 0 and totalWeight
+    const randomNumber = Math.random();
+
+    // Iterate through availableAttacks to find selected availableAttack
+    let cumulativeWeight = 0;
+    for (const availableAttack of availableAttacks) {
+        cumulativeWeight += availableAttack.moveStatistics.hitRate;
+        if (randomNumber <= cumulativeWeight) {
+            return availableAttack;
+        }
+    }
+};
+
+FighterSchema.methods.autoSelectDefenseCombatSkill = async function () {
+    const defenseCombatSkills = this.combatSkills.filter((cs) => 
+        cs.discipline === DisciplineTypes.Defence
+    );
+
+    console.log(Math.floor(Math.random() * defenseCombatSkills.length));
+
+    return defenseCombatSkills[Math.floor(Math.random() * defenseCombatSkills.length)];
+};
+
+
+function getNextLimb(currentLimb) {
+    const limbs = Object.values(LimbTypes);
+    const currentIndex = limbs.indexOf(currentLimb);
+    const nextIndex = (currentIndex + 1) % limbs.length;
+    return limbs[nextIndex];
+}
 
 
 module.exports = mongoose.model('Fighter', FighterSchema);

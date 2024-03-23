@@ -197,8 +197,6 @@ MoveSchema.methods.inRange = async function (xDistance, yDistance) {
         return pattern.x >= xDistance && pattern.y >= yDistance;
     });
 
-    console.log(isInRange);
-
     return isInRange;
 }
 

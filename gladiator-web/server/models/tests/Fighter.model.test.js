@@ -15,14 +15,13 @@ const FightFloor = mongoose.model('FightFloor');
 
 const { MarkerTypes } = require('../FightFloor');
 const { CombatCategoryTypes, DisciplineTypes, LimbTypes } = require("../Fighter");
-const { RangeDamageTypes } = require("../Move");
+const { RangeDamageTypes, MoveList } = require("../Move");
 const { ThreeByThreeFightFloor, simpleFighter } = require('./utils');
 
 describe('Fighter Model', () => {
     let fighter;
     let fightFloor;
     let movesList;
-
     beforeAll(async () => {
         await db.connect();
     });
@@ -272,8 +271,18 @@ describe('Fighter Model', () => {
 
         result = await fighter1.autoSelectDefenseCombatSkill();
 
-        console.log({result});
-
         expect(result).toEqual(fighter1.combatSkills[1]);
     });
+
+    test('getAvailableMoves, returns expected moves ', async () =>{
+        await Move.insertMany(movesList);
+
+        const fighter1 = new Fighter(fighter);
+
+        result = await fighter1.getAvailableMoves(1,0);
+
+        console.log(result[0], movesList[0]);
+        
+        expect(result[0]._id.toString()).toEqual(movesList[0]._id);
+    })
 });

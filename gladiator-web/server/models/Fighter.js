@@ -305,6 +305,26 @@ FighterSchema.methods.inFightRecovery = async function () {
     return await this.save();
 };
 
+
+FighterSchema.methods.getAvailableMoves = async function (xMod, yMod) {
+    
+    let availableMoves = [];
+
+    for (let index = 0; index < this.combatSkills.length; index++) {
+        const combatSkill = this.combatSkills[index];
+        await this.populate(`combatSkills.${index}.moveStatistics.move`);
+
+        if (await combatSkill.moveStatistics.move.inRange(xMod, yMod) &&
+        combatSkill.discipline != DisciplineTypes.Defence) {
+
+            availableMoves.push(combatSkill.moveStatistics.move);
+            console.log({availableMoves});
+        }
+    }
+    
+    return availableMoves;
+}
+
 FighterSchema.methods.autoSelectAttack = async function (availableAttacks) {
     // Generate random number between 0 and totalWeight
     const randomNumber = Math.random();
@@ -320,11 +340,9 @@ FighterSchema.methods.autoSelectAttack = async function (availableAttacks) {
 };
 
 FighterSchema.methods.autoSelectDefenseCombatSkill = async function () {
-    const defenseCombatSkills = this.combatSkills.filter((cs) => 
+    const defenseCombatSkills = this.combatSkills.filter((cs) =>
         cs.discipline === DisciplineTypes.Defence
     );
-
-    console.log(Math.floor(Math.random() * defenseCombatSkills.length));
 
     return defenseCombatSkills[Math.floor(Math.random() * defenseCombatSkills.length)];
 };

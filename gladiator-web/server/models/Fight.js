@@ -286,11 +286,7 @@ FightSchema.methods.simulate = async function (arenaId) {
         currentFightTurn.targetOpponent = opponent;
 
         //gets all moves in range
-        let availableMoves = []
-        currentFighter.combatSkills.forEach(async (combatSkills) => {
-            if (combatSkills.moveStatistics.move.inRange(xMod, yMod))
-                availableMoves.push(move)
-        });
+        let availableMoves = currentFighter.getAvailableMoves(xMod, yMod)
 
         if (availableMoves.length > 0) {
             const strike = currentFighter.autoSelectAttack(availableCombatSkills);
@@ -310,8 +306,6 @@ FightSchema.methods.simulate = async function (arenaId) {
             const opponentDefenseDirection = opponentDefenseCombatSkillMove.autoSelectPattern();
 
             currentFightTurn.action.opponentDefensivePosture = {opponentDefenseCombatSkillMove, opponentDefenseDirection} //{chosenMove, chosenDirection}
-
-            Turn.create
 
             const damageReport = currentTurn.run();
 

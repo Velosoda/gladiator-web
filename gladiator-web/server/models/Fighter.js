@@ -317,7 +317,7 @@ FighterSchema.methods.getAvailableMoves = async function (xMod, yMod) {
         if (await combatSkill.moveStatistics.move.inRange(xMod, yMod) &&
         combatSkill.discipline != DisciplineTypes.Defence) {
 
-            availableMoves.push(combatSkill.moveStatistics.move);
+            availableMoves.push(combatSkill);
             console.log({availableMoves});
         }
     }
@@ -326,17 +326,42 @@ FighterSchema.methods.getAvailableMoves = async function (xMod, yMod) {
 }
 
 FighterSchema.methods.autoSelectAttack = async function (availableAttacks) {
+    console.log(availableAttacks[0].moveStatistics.move);
     // Generate random number between 0 and totalWeight
-    const randomNumber = Math.random();
+    let randomNumber = Math.random();
 
+    let combatSkill, strikingWith, target = null;
     // Iterate through availableAttacks to find selected availableAttack
-    let cumulativeWeight = 0;
+    let moveWeight = 0;
     for (const availableAttack of availableAttacks) {
-        cumulativeWeight += availableAttack.moveStatistics.hitRate;
-        if (randomNumber <= cumulativeWeight) {
-            return availableAttack;
+        moveWeight += availableAttack.moveStatistics.hitRate;
+        if (randomNumber <= moveWeight) {
+            combatSkill = availableAttack;
+            break;
         }
     }
+    
+    randomNumber = Math.random();
+    let strikingWithWeight = 0;
+    for (const limb of combatSkill.moveStatistics.move.strikingLimb) {
+        strikingWithWeight += (1 / combatSkill.moveStatistics.move.strikingLimb.length);
+        if (randomNumber <= strikingWithWeight) {
+            strikingWith = limb;
+            break;
+        }
+    }
+
+    randomNumber = Math.random();
+    let targetWeight = 0;
+    for (const limb of combatSkill.moveStatistics.move.targets) {
+        targetWeight += (1 / combatSkill.moveStatistics.move.targets.length);
+        if (randomNumber <= targetWeight) {
+            target = limb;
+            break;
+        }
+    }
+    
+    return {combatSkill, strikingWith, target}
 };
 
 FighterSchema.methods.autoSelectDefenseCombatSkill = async function () {

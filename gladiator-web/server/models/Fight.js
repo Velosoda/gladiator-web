@@ -20,7 +20,7 @@ const FightFrame = new Schema({
     grid: {
         type: String,
     }
-})
+});
 
 const TurnSchema = new Schema({
     turn: {
@@ -55,32 +55,27 @@ const TurnSchema = new Schema({
                     default: 0
                 }
             }
-            }
+        }
+    },
+    opponentDefensivePosture: {
+        type: Schema.Types.ObjectId,
+        ref: 'Move'
+    },
+    moveTo: {
+        cords: {
+            x: { type: Number },
+            y: { type: Number },
+        }
+    },
+    attack: {
+        combatSkill: {
+            type: Schema.Types.Mixed,
         },
-        opponentDefensivePosture: {
-            type: Schema.Types.ObjectId,
-            ref: 'Move'
+        strikingWith: {
+            enum: Object.values(LimbTypes),
         },
-        moveTo: {
-            cords: {
-                x: { type: Number },
-                y: { type: Number },
-            }
-        },
-        attack: {
-            move: {
-                type: Schema.Types.ObjectId,
-                ref: 'Move'
-            },
-            strikingWith: {
-                enum: Object.values(LimbTypes),
-            },
-            target: {
-                enum: Object.values(LimbTypes),
-            },
-            damage: {
-                type: Number
-            },
+        target: {
+            enum: Object.values(LimbTypes),
         },
     },
     results: {
@@ -138,9 +133,9 @@ const FightSchema = new Schema({
 });
 
 
-TurnSchema.methods.run = async function() {
+TurnSchema.methods.run = async function () {
     //Select the pattern that will hit the opponent if theres more than one its ok add it to the list or just select the strongest move 
-    let move = await this.attack.populate('move');
+    let move = this.combatSkill.moveStatistics.move
     let pattern = move.autoSelectPatternTowardsOpponent();
 
     //Using the patterns RangeDamageType and this users stats calculate the damage this move will do to the target body part
@@ -255,7 +250,7 @@ FightSchema.methods.simulate = async function (arenaId) {
     //     damage
     // }
     // results: {}
-    
+
     let fightTurns = addTurns([redCornerFighter, blueCornerFighter], 10);
 
     // await TurnSchema.insertMany(fightTurns);
@@ -292,10 +287,9 @@ FightSchema.methods.simulate = async function (arenaId) {
             const strike = currentFighter.autoSelectAttack(availableCombatSkills);
 
             currentFightTurn.action.attack = {
-                move: strike.move,
+                move: strike.combatSkill,
                 strikingWith: strike.strikingWith,
                 target: strike.target,
-                damage: strike.damage
                 //We need to choose the pattern that we should be using to hit this guy unless we just loop
             };
 
@@ -305,8 +299,10 @@ FightSchema.methods.simulate = async function (arenaId) {
 
             const opponentDefenseDirection = opponentDefenseCombatSkillMove.autoSelectPattern();
 
-            currentFightTurn.action.opponentDefensivePosture = {opponentDefenseCombatSkillMove, opponentDefenseDirection} //{chosenMove, chosenDirection}
+            currentFightTurn.action.opponentDefensivePosture = { opponentDefenseCombatSkillMove, opponentDefenseDirection } //{chosenMove, chosenDirection}
 
+
+            
             const damageReport = currentTurn.run();
 
             currentFightTurn.results.append(
@@ -339,7 +335,7 @@ FightSchema.methods.simulate = async function (arenaId) {
             fightTurns.concat(addTurns([redCornerFighter, blueCornerFighter], 10));
         }
 
-        if(this.isOver() === true){
+        if (this.isOver() === true) {
             break;
         }
     }

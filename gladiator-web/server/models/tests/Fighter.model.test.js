@@ -250,15 +250,24 @@ describe('Fighter Model', () => {
         });
     });
 
-    test('ai select attack selects the appropriate attack', async () => {
+    test('ai select attack selects the appropriate combatSkill, strikingWith and target', async () => {
+
+        await Move.insertMany(movesList);
+
         const fighter1 = new Fighter(fighter);
 
         mockRandom = jest.spyOn(Math, "random")
+            .mockReturnValue(0.1)
+            .mockReturnValue(0.1)
             .mockReturnValue(0.1);
 
-        result = await fighter1.autoSelectAttack(fighter.combatSkills);
+        await fighter1.populate(`combatSkills.${0}.moveStatistics.move`);
 
-        expect(result).toEqual(fighter.combatSkills[0]);
+        result = await fighter1.autoSelectAttack([fighter1.combatSkills[0]]);
+
+        expect(result.combatSkill).toEqual(fighter1.combatSkills[0]);
+        expect(result.strikingWith).toEqual(fighter1.combatSkills[0].moveStatistics.move.strikingLimb[0]);
+        expect(result.target).toEqual(fighter1.combatSkills[0].moveStatistics.move.targets[0]);
     });
 
     test('auto Select Defense CombatSkill selects the appropriate attack', async () => {
@@ -283,6 +292,9 @@ describe('Fighter Model', () => {
 
         console.log(result[0], movesList[0]);
         
-        expect(result[0]._id.toString()).toEqual(movesList[0]._id);
+        expect(result[0].moveStatistics.move._id.toString()).toEqual(movesList[0]._id);
+        expect(result[0].category).toEqual(fighter1.combatSkills[0].category);
+        expect(result[0].discipline).toEqual(fighter1.combatSkills[0].discipline);
+        expect(result[0].moveStatistics).toEqual(fighter1.combatSkills[0].moveStatistics);
     })
 });

@@ -2,11 +2,12 @@ const mongoose = require("mongoose");
 const { Types } = mongoose;
 const db = require('../../tests/db');
 const _ = require('lodash');
-const { v4: uuidv4 } = require('uuid');
 
 require('../Move');
+require('../Fight');
 require('../Fighter');
 require('../FightFloor');
+require('../Turn');
 
 const Fighter = mongoose.model('Fighter');
 const Move = mongoose.model('Move');
@@ -22,6 +23,7 @@ describe('Turn Model', () => {
     let fighter;
     let fightFloor;
     let movesList;
+    let turn;
 
     beforeAll(async () => {
         await db.connect();
@@ -101,17 +103,65 @@ describe('Turn Model', () => {
         fightFloor = _.cloneDeep(ThreeByThreeFightFloor);
 
         fighter = {
+            _id: new Types.ObjectId(),
             name: "",
             health: {
-                limbs: [{
-                    name: LimbTypes.Head,
-                    regenerativeHealth: 50,
-                    healthLimit: 100,
-                    healthLifetimeLimit: 150,
-                    isSevered: false,
-                    canBeSevered: true,
-                    pointValue: 2,
-                }]
+                limbs: [
+                    {
+                        name: LimbTypes.Head,
+                        regenerativeHealth: 50,
+                        healthLimit: 100,
+                        healthLifetimeLimit: 150,
+                        isSevered: false,
+                        canBeSevered: true,
+                        pointValue: 2,
+                    },
+                    {
+                        name: LimbTypes.Torso,
+                        regenerativeHealth: 50,
+                        healthLimit: 100,
+                        healthLifetimeLimit: 150,
+                        isSevered: false,
+                        canBeSevered: true,
+                        pointValue: 2,
+                    },
+                    {
+                        name: LimbTypes.RightArm,
+                        regenerativeHealth: 50,
+                        healthLimit: 100,
+                        healthLifetimeLimit: 150,
+                        isSevered: false,
+                        canBeSevered: true,
+                        pointValue: 2,
+                    },
+                    {
+                        name: LimbTypes.LeftArm,
+                        regenerativeHealth: 50,
+                        healthLimit: 100,
+                        healthLifetimeLimit: 150,
+                        isSevered: false,
+                        canBeSevered: true,
+                        pointValue: 2,
+                    },
+                    {
+                        name: LimbTypes.RightLeg,
+                        regenerativeHealth: 50,
+                        healthLimit: 100,
+                        healthLifetimeLimit: 150,
+                        isSevered: false,
+                        canBeSevered: true,
+                        pointValue: 2,
+                    },
+                    {
+                        name: LimbTypes.LeftLeg,
+                        regenerativeHealth: 50,
+                        healthLimit: 100,
+                        healthLifetimeLimit: 150,
+                        isSevered: false,
+                        canBeSevered: true,
+                        pointValue: 2,
+                    },
+                ]
             },
             attributes: {
                 availablePoints: 0,
@@ -131,7 +181,7 @@ describe('Turn Model', () => {
                     {
                         name: "Durability",
                         value: Math.floor(Math.random() * (20 - 0 + 1)) + 0,
-                        derivedStatistics: ["stat5", "stat6"],
+                        derivedStatistics: ["stat6"],
                         effects: -3,
                     },
                     {
@@ -166,7 +216,7 @@ describe('Turn Model', () => {
                         hits: 15,
                         targetHits: 10,
                         misses: 5,
-                        damage: 250,
+                        damage: 10,
                         hitRate: 0.75,
                         targetHitRate: 0.5,
                         missRate: 0.25,
@@ -184,7 +234,7 @@ describe('Turn Model', () => {
                         hits: 5,
                         targetHits: 3,
                         misses: 2,
-                        damage: 120,
+                        damage: 20,
                         hitRate: 0.5,
                         targetHitRate: 0.3,
                         missRate: 0.2,
@@ -203,7 +253,7 @@ describe('Turn Model', () => {
                         hits: 5,
                         targetHits: 3,
                         misses: 2,
-                        damage: 120,
+                        damage: 100,
                         hitRate: 0.5,
                         targetHitRate: 0.3,
                         missRate: 0.2,
@@ -213,71 +263,134 @@ describe('Turn Model', () => {
             ]
         };
 
-    });
+        fighter.name = "Tongy";
+        const fighter1 = new Fighter(fighter);
 
-    test('Turn.getDamage gets approprate damage values ', async () => {
+        fighter._id = new Types.ObjectId();
+        fighter.name = "Brody";
+        const fighter2 = new Fighter(fighter);
 
-        let sampleTurn = {
+        turn = {
+            _id: "6094bbdc6f22b80f70f71114",
             turn: 1,
-            currentFighter: new Fighter(fighter),
-            target: new Fighter(fighter),
-            actions: {
-                opponentDefensivePosture: {
-                    opponentDefenseCombatSkillMove: {
-                        _id: "6094bbdc6f22b80f70f7b28b",
-                        category: CombatCategoryTypes.Unarmed,
-                        discipline: DisciplineTypes.Defence,
-                        name: 'Block',
-                        targets: [LimbTypes.Head, LimbTypes.Torso],
-                        strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
-                        baseMoveDamage: 5,
-                        expPerLand: 2,
-                        energyCost: 5,
-                        criticalChance: 5,
-                        canSevereLimb: false,
-                        hypeOnTargetHit: 5,
-                        rangePattern: [
-                            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 0 },
-                        ]
-                    },
-                    opponentDefenseDirection: { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 0 },
-                },
-                moveTo: {
-                    cords: {
-                        x: 1,
-                        y: 1,
-                    }
-                },
-                move: {
-                    _id: "6094bbdc6f22b80f70f7b28a",
+            attacker: fighter1,
+            target: fighter2,
+            attack: {
+                combatSkill: {
                     category: CombatCategoryTypes.Unarmed,
                     discipline: DisciplineTypes.Boxing,
-                    name: 'Jab',
-                    targets: [LimbTypes.Head, LimbTypes.Torso],
-                    strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
-                    baseMoveDamage: 5,
-                    expPerLand: 2,
-                    energyCost: 5,
-                    criticalChance: 5,
-                    canSevereLimb: false,
-                    hypeOnTargetHit: 5,
-                    rangePattern: [
-                        { rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 },
-                        { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 },
-                        { rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 },
-                        { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 },
-                    ]
+                    moveStatistics: {
+                        level: 3,
+                        currentExp: 50,
+                        expToNextLevel: 100,
+                        throws: 20,
+                        hits: 15,
+                        targetHits: 10,
+                        misses: 5,
+                        damage: 250,
+                        hitRate: 0.75,
+                        targetHitRate: 0.5,
+                        missRate: 0.25,
+                        move: {
+                            _id: "6094bbdc6f22b80f70f7b28a",
+                            category: CombatCategoryTypes.Unarmed,
+                            discipline: DisciplineTypes.Boxing,
+                            name: 'Jab',
+                            targets: [LimbTypes.Head, LimbTypes.Torso],
+                            strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
+                            baseMoveDamage: 5,
+                            expPerLand: 2,
+                            energyCost: 5,
+                            criticalChance: 5,
+                            canSevereLimb: false,
+                            hypeOnTargetHit: 5,
+                            rangePattern: [
+                                [{ rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 }],
+                                [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 }],
+                                [{ rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 }],
+                                [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 }],
+                            ]
+                        }
+                    }
                 },
                 strikingWith: LimbTypes.LeftArm,
                 target: LimbTypes.Head,
                 damage: 5
             },
-            results:[]
+            defense: {
+                combatSkill: {
+                    category: CombatCategoryTypes.Unarmed,
+                    discipline: DisciplineTypes.Defence,
+                    moveStatistics: {
+                        level: 3,
+                        currentExp: 50,
+                        expToNextLevel: 100,
+                        throws: 20,
+                        hits: 15,
+                        targetHits: 10,
+                        misses: 5,
+                        damage: 10,
+                        hitRate: 0.75,
+                        targetHitRate: 0.5,
+                        missRate: 0.25,
+                        move: {
+                            _id: "6094bbdc6f22b80f70f7b28a",
+                            category: CombatCategoryTypes.Unarmed,
+                            discipline: DisciplineTypes.Boxing,
+                            name: 'Block',
+                            targets: [LimbTypes.Head, LimbTypes.Torso],
+                            strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
+                            baseMoveDamage: 5,
+                            expPerLand: 2,
+                            energyCost: 5,
+                            criticalChance: 5,
+                            canSevereLimb: false,
+                            hypeOnTargetHit: 5,
+                            rangePattern: [
+                                [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 0 }],
+                            ]
+                        }
+                    }
+                },
+                pattern: { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 0 },
+                strikingWith: LimbTypes.LeftArm,
+                target: LimbTypes.Head
+            },
+            moveTo: {
+                cords: {
+                    x: 1,
+                    y: 1,
+                }
+            },
+            results: ""
         };
+    });
 
-        let turn = new Turn(sampleTurn);
-        
+    test('Turn.run runs a turn where the defender blocks an attack with a block that changes the target ', async () => {
 
+        testTurn = await new Turn(turn);
 
+        await testTurn.run();
+
+        expect(testTurn.attack.target).toEqual(LimbTypes.LeftArm);
+        expect(testTurn.target.health.limbs.find((limb) => limb.name === testTurn.attack.target).regenerativeHealth).toEqual(45);
+        expect(testTurn.results).toEqual(
+            `Tongy threw a Jab at Brody's Head \nBut Brody Block the attack with their Left Arm\nFor 5 damage`
+        );
+
+    });
+    test('Turn.run runs a turn where the defender does not choose the right target for the block', async () => {
+
+        turn.defense.target = LimbTypes.Torso;
+
+        testTurn = await new Turn(turn);
+
+        await testTurn.run();
+
+        expect(testTurn.attack.target).toEqual(LimbTypes.Head);
+        expect(testTurn.target.health.limbs.find((limb) => limb.name === testTurn.attack.target).regenerativeHealth).toEqual(40);
+        expect(testTurn.results).toEqual(
+            `Tongy threw a Jab at Brody's Head \nFor 10 damage`
+        );
     });
 });

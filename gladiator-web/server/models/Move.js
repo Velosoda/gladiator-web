@@ -22,10 +22,10 @@ const MoveList = [
         canSevereLimb: false,
         hypeOnTargetHit: 5,
         rangePattern: [
-            { rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 },
-            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 },
-            { rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 },
-            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 },
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 }],
         ]
     },
     {
@@ -41,10 +41,10 @@ const MoveList = [
         canSevereLimb: false,
         hypeOnTargetHit: 5,
         rangePattern: [
-            { rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 },
-            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 },
-            { rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 },
-            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 },
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 }],
         ]
     },
     {
@@ -60,10 +60,10 @@ const MoveList = [
         canSevereLimb: false,
         hypeOnTargetHit: 8,
         rangePattern: [
-            { rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 },
-            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 },
-            { rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 },
-            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 },
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 }],
         ]
     },
     {
@@ -79,10 +79,7 @@ const MoveList = [
         canSevereLimb: false,
         hypeOnTargetHit: 0,
         rangePattern: [
-            { rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 },
-            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 },
-            { rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 },
-            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 },
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 0 }],
         ]
     },
 ];
@@ -140,20 +137,22 @@ const MoveSchema = new Schema({
         required: true,
     },
     rangePattern: [
-        {
-            rangeDamage: {
-                type: String,
-                enum: Object.values(RangeDamageTypes),
-            },
-            x: {
-                type: Number,
-                default: 0
-            },
-            y: {
-                type: Number,
-                default: 0
+        [
+            {
+                rangeDamage: {
+                    type: String,
+                    enum: Object.values(RangeDamageTypes),
+                },
+                x: {
+                    type: Number,
+                    default: 0
+                },
+                y: {
+                    type: Number,
+                    default: 0
+                }
             }
-        }
+        ]
     ]
 });
 
@@ -190,14 +189,33 @@ MoveSchema.statics.findMovesByCombatSkillAverage = async function (combatSkillAv
 
 //using the xDistance and yDistance see if this move is in range with its aoe
 MoveSchema.methods.inRange = async function (xDistance, yDistance) {
+    for (const patterns of this.rangePattern) {
+        for (const pattern of patterns) {
+            // const xDiff = xDistance - pattern.x;
+            // const yDiff = yDistance - pattern.y;
+        
+            if (pattern.x >= xDistance && pattern.y >= yDistance) {
+                return { inRange: true, patterns };
+            }
+        }
+    }
 
-    const isInRange = this.rangePattern.some((pattern) => {
-        const xDiff = xDistance - pattern.x;
-        const yDiff = yDistance - pattern.y;
-        return pattern.x >= xDistance && pattern.y >= yDistance;
-    });
+    return { inRange: false, patterns: null };
+}
 
-    return isInRange;
+MoveSchema.methods.inRange = async function (xDistance, yDistance) {
+    for (const patterns of this.rangePattern) {
+        for (const pattern of patterns) {
+            // const xDiff = xDistance - pattern.x;
+            // const yDiff = yDistance - pattern.y;
+        
+            if (pattern.x >= xDistance && pattern.y >= yDistance) {
+                return { inRange: true, patterns };
+            }
+        }
+    }
+
+    return { inRange: false, patterns: null };
 }
 
 MoveSchema.methods.autoSelectPattern = async function(){
@@ -212,5 +230,4 @@ module.exports = {
     Move,
     RangeDamageTypes,
     MoveList,
-    RangeDamageTypes
 };

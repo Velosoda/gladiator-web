@@ -51,10 +51,10 @@ describe('Fighter Model', () => {
                 canSevereLimb: false,
                 hypeOnTargetHit: 5,
                 rangePattern: [
-                    { rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 },
-                    { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 },
-                    { rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 },
-                    { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 },
+                    [{ rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 }],
+                    [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 }],
+                    [{ rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 }],
+                    [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 }],
                 ]
             },
             {
@@ -71,7 +71,7 @@ describe('Fighter Model', () => {
                 canSevereLimb: false,
                 hypeOnTargetHit: 5,
                 rangePattern: [
-                    { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 0 },
+                    [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 0 }],
                 ]
             },
             {
@@ -88,15 +88,53 @@ describe('Fighter Model', () => {
                 canSevereLimb: false,
                 hypeOnTargetHit: 5,
                 rangePattern: [
-                    { rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 },
-                    { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 },
-                    { rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 },
-                    { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 },
+                    [{ rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 }],
+                    [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 }],
+                    [{ rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 }],
+                    [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 }],
+                ]
+            },
+            {
+                _id: "6094bbdc6f22b80f70f7b290",
+                category: CombatCategoryTypes.Unarmed,
+                discipline: DisciplineTypes.Kicking,
+                name: 'Side Kick',
+                targets: [
+                    LimbTypes.Head,
+                    LimbTypes.Torso,
+                    LimbTypes.LeftLeg,
+                    LimbTypes.RightLeg,
+                ],
+                strikingLimb: [
+                    LimbTypes.LeftLeg,
+                    LimbTypes.RightLeg,
+                ],
+                baseMoveDamage: 10,
+                expPerLand: 5,
+                energyCost: 20,
+                criticalChance: 10,
+                canSevereLimb: false,
+                hypeOnTargetHit: 10,
+                rangePattern: [
+                    [
+                        { rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 },
+                        { rangeDamage: RangeDamageTypes.Normal, x: 2, y: 0 },
+                    ],
+                    [
+                        { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 },
+                        { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 2 },
+                    ],
+                    [
+                        { rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 },
+                        { rangeDamage: RangeDamageTypes.Normal, x: -2, y: 0 },
+                    ],
+                    [
+                        { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 },
+                        { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -2 },
+                    ],
                 ]
             }
-
-        ]
-
+        ];
 
         fightFloor = _.cloneDeep(ThreeByThreeFightFloor);
 
@@ -212,6 +250,87 @@ describe('Fighter Model', () => {
                 },
             ]
         };
+        attack = {
+            combatSkill: {
+                category: CombatCategoryTypes.Unarmed,
+                discipline: DisciplineTypes.Boxing,
+                moveStatistics: {
+                    level: 3,
+                    currentExp: 50,
+                    expToNextLevel: 100,
+                    throws: 20,
+                    hits: 15,
+                    targetHits: 10,
+                    misses: 5,
+                    damage: 250,
+                    hitRate: 0.75,
+                    targetHitRate: 0.5,
+                    missRate: 0.25,
+                    move: {
+                        _id: "6094bbdc6f22b80f70f7b28a",
+                        category: CombatCategoryTypes.Unarmed,
+                        discipline: DisciplineTypes.Boxing,
+                        name: 'Jab',
+                        targets: [LimbTypes.Head, LimbTypes.Torso],
+                        strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
+                        baseMoveDamage: 5,
+                        expPerLand: 2,
+                        energyCost: 5,
+                        criticalChance: 5,
+                        canSevereLimb: false,
+                        hypeOnTargetHit: 5,
+                        rangePattern: [
+                            [{ rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 }],
+                            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 }],
+                            [{ rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 }],
+                            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 }],
+                        ]
+                    }
+                }
+            },
+            strikingWith: LimbTypes.LeftArm,
+            target: LimbTypes.Head,
+            damage: 5
+        };
+        defense = {
+            combatSkill: {
+                category: CombatCategoryTypes.Unarmed,
+                discipline: DisciplineTypes.Defence,
+                moveStatistics: {
+                    level: 3,
+                    currentExp: 50,
+                    expToNextLevel: 100,
+                    throws: 20,
+                    hits: 15,
+                    targetHits: 10,
+                    misses: 5,
+                    damage: 10,
+                    hitRate: 0.75,
+                    targetHitRate: 0.5,
+                    missRate: 0.25,
+                    move: {
+                        _id: "6094bbdc6f22b80f70f7b28a",
+                        category: CombatCategoryTypes.Unarmed,
+                        discipline: DisciplineTypes.Boxing,
+                        name: 'Block',
+                        targets: [LimbTypes.Head, LimbTypes.Torso],
+                        strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
+                        baseMoveDamage: 5,
+                        expPerLand: 2,
+                        energyCost: 5,
+                        criticalChance: 5,
+                        canSevereLimb: false,
+                        hypeOnTargetHit: 5,
+                        rangePattern: [
+                            [{ rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 }],
+                        ]
+                    }
+                }
+            },
+            pattern: { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 0 },
+            strikingWith: LimbTypes.LeftArm,
+            target: LimbTypes.Head
+        }
     });
 
     test('inFightRecovery basic minimum value is given to the limb', async () => {
@@ -270,31 +389,101 @@ describe('Fighter Model', () => {
         expect(result.target).toEqual(fighter1.combatSkills[0].moveStatistics.move.targets[0]);
     });
 
-    test('auto Select Defense CombatSkill selects the appropriate attack', async () => {
+    test('getAvailableMoves, returns expected moves ', async () => {
         await Move.insertMany(movesList);
 
         const fighter1 = new Fighter(fighter);
-        
+
+        result = await fighter1.getAvailableMoves(1, 0);
+
+        expect(result[0].rangeStats).toMatchObject({
+            inRange: true,
+            patterns: [{
+                rangeDamage: RangeDamageTypes.Normal,
+                x: 1,
+                y: 0
+            }]
+        });
+        expect(result[0].combatSkill.moveStatistics.move._id.toString()).toEqual(movesList[0]._id);
+        expect(result[0].combatSkill.category).toEqual(fighter1.combatSkills[0].category);
+        expect(result[0].combatSkill.discipline).toEqual(fighter1.combatSkills[0].discipline);
+        expect(result[0].combatSkill.moveStatistics).toEqual(fighter1.combatSkills[0].moveStatistics);
+    })
+    test('autoSelectDefenceCombatSkills returns a combatskill that is populated and is defence', async () => {
+        await Move.insertMany(movesList);
+
+        const fighter1 = new Fighter(fighter);
+
         mockRandom = jest.spyOn(Math, "random")
+            .mockReturnValue(0)
+            .mockReturnValue(0)
+            .mockReturnValue(0)
             .mockReturnValue(0);
 
         result = await fighter1.autoSelectDefenseCombatSkill();
 
-        expect(result).toEqual(fighter1.combatSkills[1]);
+        expect(result).toEqual({
+            combatSkill: fighter1.combatSkills[1],
+            target: LimbTypes.Head,
+            strikingLimb: LimbTypes.LeftArm,
+            pattern: fighter1.combatSkills[1].moveStatistics.move.rangePattern[0],
+        });
     });
 
-    test('getAvailableMoves, returns expected moves ', async () =>{
-        await Move.insertMany(movesList);
+    test('applyDamage Applies the correct damage to the limb ', async () => {
 
-        const fighter1 = new Fighter(fighter);
+        let fighter1 = new Fighter(fighter);
 
-        result = await fighter1.getAvailableMoves(1,0);
+        await fighter1.applyDamage(10, LimbTypes.Head);
 
-        console.log(result[0], movesList[0]);
-        
-        expect(result[0].moveStatistics.move._id.toString()).toEqual(movesList[0]._id);
-        expect(result[0].category).toEqual(fighter1.combatSkills[0].category);
-        expect(result[0].discipline).toEqual(fighter1.combatSkills[0].discipline);
-        expect(result[0].moveStatistics).toEqual(fighter1.combatSkills[0].moveStatistics);
-    })
+        const limb = fighter1.health.limbs.find((limb) => limb.name === LimbTypes.Head);
+
+        expect(limb.regenerativeHealth).toEqual(40);
+    });
+    test('applyDamage Applies the correct damage to the limbs health limit when theres no more regenHealth ', async () => {
+
+        let fighter1 = new Fighter(fighter);
+
+        let limb = fighter1.health.limbs.find((limb) => limb.name === LimbTypes.Head);
+        limb.regenerativeHealth = 0;
+
+        await fighter1.applyDamage(10, LimbTypes.Head);
+
+        expect(limb.healthLimit).toEqual(90);
+    });
+    test('damageAbsorption changes target and does not modify damage of attack', async () => {
+        let fighter1 = new Fighter(fighter);
+
+        const result = await fighter1.damageAbsorption(attack, defense);
+
+        expect(result).toEqual(true);
+        expect(attack.target).toEqual(LimbTypes.LeftArm);
+        expect(attack.damage).toEqual(5);
+
+    });
+    test('damageAbsorption returns Critical hit if attack hits and has a different target than the defense target', async ()=> {
+        let fighter1 = new Fighter(fighter);
+        attack.target = LimbTypes.Torso;
+
+        const result = await fighter1.damageAbsorption(attack, defense);
+        expect(result).toEqual(false); // damageabsoption is false because the target just got hit straight up 
+        expect(attack.target).toEqual(LimbTypes.Torso);
+        expect(attack.damage).toEqual(10);
+    });
+
+    //TODO: ADD NOTHING TYPE WITH A PATTERN OF BLOCKING AND no striking limbs and target limbs and 0 stats
+    test('damageAbsorption returns false when attack does not hit', async ()=> {
+        let fighter1 = new Fighter(fighter);
+        attack.rangePattern = [
+            { rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 }
+        ]
+        defense.pattern = [
+            { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 }
+        ]
+
+        const result = await fighter1.damageAbsorption(attack, defense);
+        expect(result).toEqual(false);
+        expect(attack.target).toEqual(LimbTypes.Head);
+        expect(attack.damage).toEqual(5);
+    });
 });

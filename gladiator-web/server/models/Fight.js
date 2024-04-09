@@ -1,11 +1,14 @@
 const mongoose = require('mongoose');
-const { CombatCategoryTypes, AttributeTypes, LimbTypes } = require('./Fighter');
 const { Schema } = mongoose;
 
 const Arena = require('../models/Arena');
+const Turn = require('../models/Turn');
 const Fighter = require('../models/Fighter');
 const Move = require('../models/Move');
+
 const { MarkerTypes } = require('./FightFloor');
+const { CombatCategoryTypes, AttributeTypes, LimbTypes } = require('./Fighter');
+
 
 const FightGradeTypes = {
     A: 'A',
@@ -21,69 +24,6 @@ const FightFrame = new Schema({
         type: String,
     }
 });
-
-const TurnSchema = new Schema({
-    turn: {
-        type: Number,
-        default: 0
-    },
-    currentfighter: {
-        type: Schema.Types.ObjectId,
-        ref: 'Fighter'
-    },
-    target: {
-        type: Schema.Types.ObjectId,
-        ref: 'Fighter'
-    },
-    actions: {
-        opponentDefensivePosture: {
-            opponentDefenseCombatSkillMove: {
-                type: Schema.Types.ObjectId,
-                ref: 'Move'
-            },
-            opponentDefenseDirection: {
-                rangeDamage: {
-                    type: String,
-                    enum: Object.values(Move.RangeDamageTypes),
-                },
-                x: {
-                    type: Number,
-                    default: 0
-                },
-                y: {
-                    type: Number,
-                    default: 0
-                }
-            }
-        }
-    },
-    opponentDefensivePosture: {
-        type: Schema.Types.ObjectId,
-        ref: 'Move'
-    },
-    moveTo: {
-        cords: {
-            x: { type: Number },
-            y: { type: Number },
-        }
-    },
-    attack: {
-        combatSkill: {
-            type: Schema.Types.Mixed,
-        },
-        strikingWith: {
-            enum: Object.values(LimbTypes),
-        },
-        target: {
-            enum: Object.values(LimbTypes),
-        },
-    },
-    results: {
-        type: [String]
-    },
-});
-
-
 
 
 const FightSchema = new Schema({
@@ -121,7 +61,12 @@ const FightSchema = new Schema({
         type: Number,
         default: 0
     },
-    turns: [TurnSchema],
+    turns: [
+        {
+            type: Schema.Types.ObjectId,
+            ref: 'Turn'
+        }
+    ],
     hype: {
         type: Number,
         default: 0
@@ -132,24 +77,6 @@ const FightSchema = new Schema({
     },
 });
 
-
-TurnSchema.methods.run = async function () {
-    //Select the pattern that will hit the opponent if theres more than one its ok add it to the list or just select the strongest move 
-    let move = this.combatSkill.moveStatistics.move
-    let pattern = move.autoSelectPatternTowardsOpponent();
-
-    //Using the patterns RangeDamageType and this users stats calculate the damage this move will do to the target body part
-    let damage = this.getDamage(pattern, move, this.currentFighter)
-
-
-    //Using the opponent's defensive posture calculate how much damage the opponent negates and if the posture changes the target
-    damage -= this.damageAbsorbtion(this.targetOpponent, this.opponentDefensivePosture, pattern)
-
-
-    //Apply finalDamage to the finalLimb of the opponent
-    this.applyDamage(damage, opponent);
-
-}
 
 FightSchema.methods.addTurns = async function (fighters, turns) {
     const nextTurns = [];
@@ -167,10 +94,10 @@ FightSchema.methods.addTurns = async function (fighters, turns) {
         }
         nextTurns.push({
             turn: i + 1,
-            currentfighter: nextFighter,
-            targetOpponent: null,
+            attacker: nextFighter,
+            target: null,
             actions: {
-                opponentDefensivePosture: null,
+                opponentDefence: null,
                 moveTo: {
                     x: null,
                     y: null,
@@ -187,9 +114,8 @@ FightSchema.methods.addTurns = async function (fighters, turns) {
 
     }
 
-
     return nextTurns;
-}
+};
 
 FightSchema.methods.simulate = async function (arenaId) {
     let redCornerFighter;
@@ -232,7 +158,7 @@ FightSchema.methods.simulate = async function (arenaId) {
     // currentfighter: 
     // targetOpponent: 
     // actions: {
-    //     opponentDefensivePosture: {
+    //     opponentDefence: {
     //         opponentDefenseCombatSkillMove, 
     //         opponentDefenseDirection
     //     },
@@ -299,10 +225,8 @@ FightSchema.methods.simulate = async function (arenaId) {
 
             const opponentDefenseDirection = opponentDefenseCombatSkillMove.autoSelectPattern();
 
-            currentFightTurn.action.opponentDefensivePosture = { opponentDefenseCombatSkillMove, opponentDefenseDirection } //{chosenMove, chosenDirection}
+            currentFightTurn.action.opponentDefence = { opponentDefenseCombatSkillMove, opponentDefenseDirection } //{chosenMove, chosenDirection}
 
-
-            
             const damageReport = currentTurn.run();
 
             currentFightTurn.results.append(
@@ -345,11 +269,11 @@ FightSchema.methods.simulate = async function (arenaId) {
     //New fightlog entry is added
     //if the grid changed that needs to go in the fight log
 
-}
+};
 
 function clearUnusedTurns(fightTurns) {
     // for (const turn of)
-}
+};
 
 // fight: {
 //     teams:[
@@ -365,7 +289,6 @@ function clearUnusedTurns(fightTurns) {
 
 
 module.exports = mongoose.model('Fight', FightSchema);
-module.exports = mongoose.model('Turn', TurnSchema);
 module.exports = {
     FightGradeTypes
 }

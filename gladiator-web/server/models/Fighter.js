@@ -214,6 +214,91 @@ const FighterSchema = new Schema(
     }
 );
 
+FighterSchema.methods.applyDamage = async function (damage, targetLimb) {
+
+    let limb;
+
+    // Perform the search operation
+    this.health.limbs.forEach(element => {
+        if (element.name === targetLimb) {
+            limb = element;
+        }
+    });
+
+    if(limb == null) throw new Error(`limb not found: ${targetLimb}`);
+
+    let leftOver = 0
+
+    if (limb.regenerativeHealth < damage) {
+        leftOver = Math.abs(limb.regenerativeHealth - damage);
+        limb.regenerativeHealth -= damage;
+        if (limb.regenerativeHealth < 0) {
+            limb.regenerativeHealth = 0;
+        }
+    } else {
+        limb.regenerativeHealth -= damage;
+    }
+
+    if (leftOver > 0) {
+        limb.healthLimit -= leftOver
+        leftOver -= limb.healthLimit - leftOver;
+        if (limb.healthLimit < 0) {
+            limb.healthLimit = 0;
+        }
+    }
+
+    await this.save();
+};
+
+
+FighterSchema.methods.damageAbsorption = async function (attack, defense) {
+    //Check to see if the move pattern intersects with the defensive Posture pattern
+    //basically call inRange
+
+    for (const patterns of attack.combatSkill.moveStatistics.move.rangePattern) {
+        for (const pattern of patterns) {
+            // console.log(patternsHit(pattern.x,pattern.y,defense.pattern.x,defense.pattern.y));
+
+            if (patternsHit(
+                pattern.x,
+                pattern.y,
+                defense.pattern.x,
+                defense.pattern.y)) {
+                //Hit Logic
+                //if yes check the attacker target and defense target
+                //  if the target limb is not the same as the opponents target limb
+                //      return damage: +Critical DAMAGE , original target limb
+                //  if the target is the same as the opponents target limb
+                //      change the target to one of the striking limbs for that move
+                //      return damage: 0, opponents target limb
+
+                if (attack.target === defense.target) {
+                    attack.target = defense.strikingWith;
+                    attack.damage += 0;
+                    return true;
+                } else {
+                    attack.damage += 5; //BALANCEPOINT: We should be calculatign this more interacately 
+                    return false;
+                }
+            }
+        }
+    }
+
+    //NEVER HITS SO ATTACK MISSES thats what false means here    
+    return false;
+};
+
+function patternsHit(attackerX, attackerY, defenderX, defenderY) {
+    if (defenderX === 0 && defenderY === 0) {
+        return true
+    }
+    else if (attackerX === defenderX && attackerY === defenderY) {
+        return true
+    } else {
+        return false
+    }
+}
+
 //This needs to return the position to move to 
 //Should be moving towards the other fighter
 FighterSchema.methods.autoMoveToPosition = function (fightFloor) {
@@ -307,26 +392,23 @@ FighterSchema.methods.inFightRecovery = async function () {
 
 
 FighterSchema.methods.getAvailableMoves = async function (xMod, yMod) {
-    
-    let availableMoves = [];
+    let movesAndPatterns = [];
 
     for (let index = 0; index < this.combatSkills.length; index++) {
         const combatSkill = this.combatSkills[index];
         await this.populate(`combatSkills.${index}.moveStatistics.move`);
 
-        if (await combatSkill.moveStatistics.move.inRange(xMod, yMod) &&
-        combatSkill.discipline != DisciplineTypes.Defence) {
-
-            availableMoves.push(combatSkill);
-            console.log({availableMoves});
+        const rangeStats = await combatSkill.moveStatistics.move.inRange(xMod, yMod)
+        if (rangeStats.inRange &&
+            combatSkill.discipline != DisciplineTypes.Defence) {
+            movesAndPatterns.push({ combatSkill, rangeStats });
         }
     }
-    
-    return availableMoves;
+
+    return movesAndPatterns;
 }
 
 FighterSchema.methods.autoSelectAttack = async function (availableAttacks) {
-    console.log(availableAttacks[0].moveStatistics.move);
     // Generate random number between 0 and totalWeight
     let randomNumber = Math.random();
 
@@ -340,7 +422,7 @@ FighterSchema.methods.autoSelectAttack = async function (availableAttacks) {
             break;
         }
     }
-    
+
     randomNumber = Math.random();
     let strikingWithWeight = 0;
     for (const limb of combatSkill.moveStatistics.move.strikingLimb) {
@@ -360,18 +442,36 @@ FighterSchema.methods.autoSelectAttack = async function (availableAttacks) {
             break;
         }
     }
-    
-    return {combatSkill, strikingWith, target}
+
+    return { combatSkill, strikingWith, target }
 };
 
 FighterSchema.methods.autoSelectDefenseCombatSkill = async function () {
-    const defenseCombatSkills = this.combatSkills.filter((cs) =>
-        cs.discipline === DisciplineTypes.Defence
-    );
+    // Filter combatSkills with discipline 'Defence' and get their indexes
+    const defenseIndexes = this.combatSkills
+        .map((cs, index) => cs.discipline === DisciplineTypes.Defence ? index : null)
+        .filter(index => index !== null);
 
-    return defenseCombatSkills[Math.floor(Math.random() * defenseCombatSkills.length)];
+    // Select a random index from defenseIndexes
+    const randomIndex = getRandomElementFromArray(defenseIndexes);
+
+    // Populate the moveStatistics.move field for the selected combatSkill
+    await this.populate(`combatSkills.${randomIndex}.moveStatistics.move`);
+
+    // Access the populated move field
+    const populatedCombatSkill = this.combatSkills[randomIndex];
+    const move = populatedCombatSkill.moveStatistics.move;
+
+    const target = getRandomElementFromArray(move.targets);
+    const strikingLimb = getRandomElementFromArray(move.strikingLimb);
+    const pattern = getRandomElementFromArray(move.rangePattern);
+
+    return { combatSkill: populatedCombatSkill, target, strikingLimb, pattern };
 };
 
+function getRandomElementFromArray(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
 
 function getNextLimb(currentLimb) {
     const limbs = Object.values(LimbTypes);
@@ -379,6 +479,8 @@ function getNextLimb(currentLimb) {
     const nextIndex = (currentIndex + 1) % limbs.length;
     return limbs[nextIndex];
 }
+
+
 
 
 module.exports = mongoose.model('Fighter', FighterSchema);

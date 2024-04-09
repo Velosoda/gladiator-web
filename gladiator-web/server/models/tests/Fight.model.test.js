@@ -201,10 +201,10 @@ describe('FightFloor Model', () => {
         const result = await new Fight(fight).addTurns(fighters, turns);
 
         // Assert that the result matches the expected order
-        expect(result[0].fighter._id).toEqual(fighters[0]._id);
-        expect(result[1].fighter._id).toEqual(fighters[0]._id);
-        expect(result[2].fighter._id).toEqual(fighters[1]._id);
-        expect(result[3].fighter._id).toEqual(fighters[1]._id);
+        expect(result[0].attacker._id).toEqual(fighters[0]._id);
+        expect(result[1].attacker._id).toEqual(fighters[0]._id);
+        expect(result[2].attacker._id).toEqual(fighters[1]._id);
+        expect(result[3].attacker._id).toEqual(fighters[1]._id);
 
         // Restore the original Math.random function
         mockRandom.mockRestore();

@@ -96,8 +96,6 @@ function GetFighterCords (fighterId, fightFloor){
 FightFloorSchema.methods.move = async function(fighter, cord) {
     const startingLocation = GetFighterCords(fighter._id, this);
     
-    console.log({startingLocation, cord})
-
     let markerToAdd;
     //remove fighter from marker
     this.grid[startingLocation.cords.y][startingLocation.cords.x].markers.forEach((marker)=> {

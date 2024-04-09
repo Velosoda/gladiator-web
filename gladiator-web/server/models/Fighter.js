@@ -1,6 +1,10 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
+const Move = require('../models/Move');
+
+const INITIAL_ATTRIBUTE_POINTS = 15;
+
 const LimbTypes = {
     Head: 'Head',
     Torso: 'Torso',
@@ -9,6 +13,7 @@ const LimbTypes = {
     LeftLeg: 'LeftLeg',
     RightLeg: 'RightLeg',
 };
+
 
 const AttributeTypes = {
     Strength: "Strength",
@@ -19,111 +24,137 @@ const AttributeTypes = {
     Charm: "Charm",
 };
 
-const CombatCategories = {
-    Unarmed: {
-        Boxing: "Boxing",
-        Wrestling: "Wrestling",
-        Kicking: "Kicking",
-        Dirty: "Dirty",
-    },
-    Ranged: {
-        ...this.Unarmed,
-        Archery: "Archery",
-        Gunmanship: "Gunmanship",
-        EnergyWeaponry: "Energy Weaponry",
-    },
-    Melee: {
-        ...this.Unarmed, // Include everything from Unarmed
-        SingleHanded: "Single Handed",
-        DualWielding: "Dual Wielding",
-        TwoHanded: "Two Handed",
-    },
+const DisciplineTypes = {
+    Boxing: "Boxing",
+    Wrestling: "Wrestling",
+    Kicking: "Kicking",
+    Dirty: "Dirty",
+    Defence: "Defence",
+    Archery: "Archery",
+    Gunmanship: "Gunmanship",
+    EnergyWeaponry: "Energy Weaponry",
+    SingleHanded: "Single Handed",
+    DualWielding: "Dual Wielding",
+    TwoHanded: "Two Handed",
 };
 
-
-const defaultStats = () => {
-    return {
-        level: 0,
-        // move: move,
-        currentExp: 0,
-        expToNexLevel: 15,
-        throws: 0,
-        hits: 0,
-        targetHits: 0,
-        misses: 0,
-        damage: 0,
-        hitRate: 0.0,
-        targetHitRate: 0.0,
-        missRate: 0.0,
-    }
-}
-
-const getDefaultAttacks = () => {
-    return {
-        Unarmed: {
-            Boxing: [
-                {
-                    name: "Jab",
-                    ...defaultStats()
-                },
-                {
-                    name: "Hook",
-                    ...defaultStats()
-                },
-                {
-                    name: "Block",
-                    ...defaultStats()
-                },
-            ],
-            Wrestling: [],
-            Kicking: [],
-            Dirty: [],
-        },
-        Ranged: {
-            Archery: [],
-            Gunmanship: [],
-            EnergyWeaponry: [],
-        },
-        Melee: {
-            SingleHanded: [],
-            DualWielding: [],
-            TwoHanded: [],
-        }
-    }
-}
-
-const limbSchema = {
-    currentHealth: 100,
-    overallHealth: 100,
-    isSevered: false,
-    canBeSevered: true,
-    pointValue: 2
+const CombatCategoryTypes = {
+    Unarmed: 'Unarmed',
+    Ranged: 'Ranged',
+    Melee: 'Melee',
 };
 
-const attributesSchema = {
-    level: 0,
-    currentExp: 0,
-    expToNextLevel: 5
-}
+const LimbSchema = new Schema({
+    name: {
+        type: String,
+        enum: Object.values(LimbTypes), // Enum based on LimbTypes object
+    },
+    regenerativeHealth: {
+        type: Number,
+        default: 100 // Default regenerativeHealth value
+    },
+    healthLimit: {
+        type: Number,
+        default: 100 // Default healthLimit value
+    },
+    healthLifetimeLimit: {
+        type: Number,
+        default: 100 // Default healthLifetimeLimit value
+    },
+    isSevered: {
+        type: Boolean,
+        default: false // Default isSevered value
+    },
+    canBeSevered: {
+        type: Boolean,
+        default: true // Default canBeSevered value
+    },
+    pointValue: {
+        type: Number,
+        default: 2 // Default pointValue value
+    }
+});
 
-// const attacksSchema = new Schema({
-//     name: String,
-//     level: Number,
-//     currentExp: Number,
-//     expToNextLevel: Number,
-//     throws: Number,
-//     targetHits: Number,
-//     hits: Number,
-//     misses: Number,
-//     damage: Number,
-//     hitRate: Number,
-//     targetHitRate: Number,
-//     missRate: Number,
-// });
+const AttributesSchema = new Schema({
+    name: {
+        type: String,
+        enum: Object.values(AttributeTypes), // Enum based on LimbTypes object
+    },
+    value: {
+        type: Number,
+        default: INITIAL_ATTRIBUTE_POINTS // Default value
+    },
+    derivedStatistics: {
+        type: [String], // Array of strings
+        default: [] // Default empty array
+    },
+    effects: {
+        type: Number,
+        default: 0 // Default effects value
+    }
+});
 
-const nameGenerator = () => {
-    return
-}
+const CombatSkillsSchema = new Schema({
+    category: {
+        type: String,
+        enum: Object.values(CombatCategoryTypes), // Enum based on CombatCategoryTypes object
+    },
+    discipline: {
+        type: String,
+        enum: Object.values(DisciplineTypes),
+    },
+    moveStatistics: {
+        move: {
+            type: Schema.Types.ObjectId,
+            ref: 'Move'
+        },
+        level: {
+            type: Number,
+            default: 0 // Default level value
+        },
+        currentExp: {
+            type: Number,
+            default: 0 // Default currentExp value
+        },
+        expToNexLevel: {
+            type: Number,
+            default: 15 // Default expToNexLevel value
+        },
+        throws: {
+            type: Number,
+            default: 0 // Default throws value
+        },
+        hits: {
+            type: Number,
+            default: 0 // Default hits value
+        },
+        targetHits: {
+            type: Number,
+            default: 0 // Default targetHits value
+        },
+        misses: {
+            type: Number,
+            default: 0 // Default misses value
+        },
+        damage: {
+            type: Number,
+            default: 0 // Default damage value
+        },
+        hitRate: {
+            type: Number,
+            default: 0.0 // Default hitRate value
+        },
+        targetHitRate: {
+            type: Number,
+            default: 0.0 // Default targetHitRate value
+        },
+        missRate: {
+            type: Number,
+            default: 0.0 // Default missRate value
+        },
+    }
+});
+
 const FighterSchema = new Schema(
     {
         name: {
@@ -131,7 +162,8 @@ const FighterSchema = new Schema(
             default: ""
         },
         speed: {
-            type: Number
+            type: Number,
+            default: 0
         },
         popularity: {
             type: Number,
@@ -156,82 +188,309 @@ const FighterSchema = new Schema(
             }
         },
         health: {
+            stamina: {
+                type: Number,
+                default: 100
+            },
             isDead: {
                 type: Boolean,
                 default: false
             },
-            limbs: {
-                type: Object,
-                default: Object.keys(LimbTypes).reduce((limbs, limb) => ({ ...limbs, [limb]: limbSchema }), {}),
-            }
+            limbs: [LimbSchema],
         },
         attributes: {
-            type: Object,
-            default: Object.keys(AttributeTypes).reduce((attrs, attr) => ({ ...attrs, [attr]: attributesSchema }), {}),
+            availablePoints: {
+                type: "Number",
+                default: 15
+            },
+            attributesList: [AttributesSchema]
         },
-        combatSkills: {
-            type: Object,
-            default: Object.entries(CombatCategories).reduce((categories, [category, categoryValue]) => {
-                console.log(`Processing category: ${category}`);
-                const defaultAttacks = getDefaultAttacks();
+        combatSkills: [CombatSkillsSchema],
+        pastFights: [{
+            type: Schema.Types.ObjectId,
+            ref: 'Fight'
+        }]
 
-                const defaultAttacksForDiscipline = defaultAttacks[category];
-
-                if (!defaultAttacksForDiscipline) {
-                    console.error(`No default attacks found for category: ${category}`);
-                    return categories;
-                }
-
-                const categorySchema = Object.keys(categoryValue).reduce(
-                    (disciplines, discipline) => {
-                        console.log(`  Processing discipline: ${discipline}`);
-
-                        const defaultAttacksForDiscipline = defaultAttacks[category][discipline];
-
-                        if (!defaultAttacksForDiscipline) {
-                            console.error(`    No default attacks found for discipline: ${discipline}`);
-                            return disciplines;
-                        }
-
-                        const disciplineSchema = defaultAttacksForDiscipline.map( (defaultAttack) => {
-                            return {
-                                ...defaultAttack,
-                            };
-                        });
-
-                        return {
-                            ...disciplines,
-                            [discipline]: disciplineSchema,
-                        };
-                    },
-                    {}
-                );
-
-                return { ...categories, [category]: categorySchema };
-            }, {}),
-        }
     }
 );
 
-// FighterSchema.statics.RefreshFighterPool = async function (count) {
-//     // try {
-//     //     const fightersFound = await this.countDocuments(); 
+FighterSchema.methods.applyDamage = async function (damage, targetLimb) {
 
-//     //     // if(fightersFound < count){
-//     //     //     for(let i = i)
-//     //     // }
+    let limb;
 
-//     //     console.log("Fighters Found " + fightersFound)
+    // Perform the search operation
+    this.health.limbs.forEach(element => {
+        if (element.name === targetLimb) {
+            limb = element;
+        }
+    });
 
-//     //     await FighterSchema.
+    if(limb == null) throw new Error(`limb not found: ${targetLimb}`);
+
+    let leftOver = 0
+
+    if (limb.regenerativeHealth < damage) {
+        leftOver = Math.abs(limb.regenerativeHealth - damage);
+        limb.regenerativeHealth -= damage;
+        if (limb.regenerativeHealth < 0) {
+            limb.regenerativeHealth = 0;
+        }
+    } else {
+        limb.regenerativeHealth -= damage;
+    }
+
+    if (leftOver > 0) {
+        limb.healthLimit -= leftOver
+        leftOver -= limb.healthLimit - leftOver;
+        if (limb.healthLimit < 0) {
+            limb.healthLimit = 0;
+        }
+    }
+
+    await this.save();
+};
 
 
-//     // } catch (error) {
+FighterSchema.methods.damageAbsorption = async function (attack, defense) {
+    //Check to see if the move pattern intersects with the defensive Posture pattern
+    //basically call inRange
 
-//     // }
-// };
+    for (const patterns of attack.combatSkill.moveStatistics.move.rangePattern) {
+        for (const pattern of patterns) {
+            // console.log(patternsHit(pattern.x,pattern.y,defense.pattern.x,defense.pattern.y));
+
+            if (patternsHit(
+                pattern.x,
+                pattern.y,
+                defense.pattern.x,
+                defense.pattern.y)) {
+                //Hit Logic
+                //if yes check the attacker target and defense target
+                //  if the target limb is not the same as the opponents target limb
+                //      return damage: +Critical DAMAGE , original target limb
+                //  if the target is the same as the opponents target limb
+                //      change the target to one of the striking limbs for that move
+                //      return damage: 0, opponents target limb
+
+                if (attack.target === defense.target) {
+                    attack.target = defense.strikingWith;
+                    attack.damage += 0;
+                    return true;
+                } else {
+                    attack.damage += 5; //BALANCEPOINT: We should be calculatign this more interacately 
+                    return false;
+                }
+            }
+        }
+    }
+
+    //NEVER HITS SO ATTACK MISSES thats what false means here    
+    return false;
+};
+
+function patternsHit(attackerX, attackerY, defenderX, defenderY) {
+    if (defenderX === 0 && defenderY === 0) {
+        return true
+    }
+    else if (attackerX === defenderX && attackerY === defenderY) {
+        return true
+    } else {
+        return false
+    }
+}
+
+//This needs to return the position to move to 
+//Should be moving towards the other fighter
+FighterSchema.methods.autoMoveToPosition = function (fightFloor) {
+    // console.log(fightFloor.getFighterCords(this._id.toString()).cords);
+
+    let { x, y } = fightFloor.getFighterCords(this._id.toString()).cords;
+    let { stepsX: oppXDistance, stepsY: oppYDistance, x: opponentX, y: opponentY, opponentId } = fightFloor.rangeToOpponent(x, y);
+    let movementAllowance = fightFloor.sizeExponent; //todo add some attribute that helps heree
+
+    // Calculate the distances between x, y and opponentX, opponentY
+    const xDistance = x - opponentX;
+    const yDistance = y - opponentY;
+
+    while (movementAllowance > 0) {
+        // Choose to move on the x or the y based on which requires fewer moves to reach the opponent
+        const chooseDirection = xDistance < yDistance ? 0 : 1;
+
+        // Movement along the X-axis
+        if (chooseDirection === 0 && oppXDistance !== 0) {
+            const stepX = oppXDistance > 0 ? 1 : -1;
+            x += stepX;
+            oppXDistance -= stepX;
+        }
+
+        // Movement along the Y-axis
+        if (chooseDirection === 1 && oppYDistance !== 0) {
+            const stepY = oppYDistance > 0 ? 1 : -1;
+            y += stepY;
+            oppYDistance -= stepY;
+        }
+
+        // Exit the loop if either coordinate is equal to the opponent's coordinate
+        if (x === opponentX || y === opponentY) {
+            break;
+        }
+
+        movementAllowance--;
+    }
+    return { x, y }
+};
+
+FighterSchema.methods.inFightRecovery = async function () {
+    const baseRecoveryPoints = 30.0
+    const totalRecoverPoints = this.attributes.attributesList.find((attribute) => attribute.name === AttributeTypes.Endurance).value + baseRecoveryPoints;
+    const minUsage = Math.floor(totalRecoverPoints / 4);
+    const maxUsage = Math.floor(totalRecoverPoints / 2);
+
+    let remainingRecoverPoints = totalRecoverPoints;
+    let limbI = LimbTypes.Head;
+
+    while (remainingRecoverPoints > 0) {
+        let limbToRecover = this.health.limbs.find((limb) => limb.name === limbI);
+
+        // // Choose the maximum possible value within the range of minUsage and maxUsage
+        const randomValue = Math.random();
+
+        // console.log({remainingRecoverPoints, totalRecoverPoints, baseRecoveryPoints, minUsage, maxUsage, randomValue})
+
+        let valueToApply;
+
+        // If randomValue is less than 0.5, choose minUsage, otherwise choose maxUsage
+        if (randomValue < 0.5) {
+            valueToApply = minUsage;
+        } else {
+            valueToApply = maxUsage;
+        }
+
+        if (remainingRecoverPoints < minUsage) {
+            valueToApply = remainingRecoverPoints;
+        }
+
+        limbToRecover.regenerativeHealth += valueToApply;
+        let leftOver = 0;
+
+        if (limbToRecover.regenerativeHealth > limbToRecover.healthLimit) {
+            leftOver = limbToRecover.regenerativeHealth - limbToRecover.healthLimit;
+            limbToRecover.regenerativeHealth -= leftOver;
+        }
+
+        remainingRecoverPoints -= valueToApply
+        remainingRecoverPoints += leftOver;
+
+        limbToRecover = getNextLimb(limbToRecover)
+
+        if (limbToRecover === this.health.limbs.length - 1) {
+            limbI = LimbTypes.Head;
+        }
+    }
+    return await this.save();
+};
+
+
+FighterSchema.methods.getAvailableMoves = async function (xMod, yMod) {
+    let movesAndPatterns = [];
+
+    for (let index = 0; index < this.combatSkills.length; index++) {
+        const combatSkill = this.combatSkills[index];
+        await this.populate(`combatSkills.${index}.moveStatistics.move`);
+
+        const rangeStats = await combatSkill.moveStatistics.move.inRange(xMod, yMod)
+        if (rangeStats.inRange &&
+            combatSkill.discipline != DisciplineTypes.Defence) {
+            movesAndPatterns.push({ combatSkill, rangeStats });
+        }
+    }
+
+    return movesAndPatterns;
+}
+
+FighterSchema.methods.autoSelectAttack = async function (availableAttacks) {
+    // Generate random number between 0 and totalWeight
+    let randomNumber = Math.random();
+
+    let combatSkill, strikingWith, target = null;
+    // Iterate through availableAttacks to find selected availableAttack
+    let moveWeight = 0;
+    for (const availableAttack of availableAttacks) {
+        moveWeight += availableAttack.moveStatistics.hitRate;
+        if (randomNumber <= moveWeight) {
+            combatSkill = availableAttack;
+            break;
+        }
+    }
+
+    randomNumber = Math.random();
+    let strikingWithWeight = 0;
+    for (const limb of combatSkill.moveStatistics.move.strikingLimb) {
+        strikingWithWeight += (1 / combatSkill.moveStatistics.move.strikingLimb.length);
+        if (randomNumber <= strikingWithWeight) {
+            strikingWith = limb;
+            break;
+        }
+    }
+
+    randomNumber = Math.random();
+    let targetWeight = 0;
+    for (const limb of combatSkill.moveStatistics.move.targets) {
+        targetWeight += (1 / combatSkill.moveStatistics.move.targets.length);
+        if (randomNumber <= targetWeight) {
+            target = limb;
+            break;
+        }
+    }
+
+    return { combatSkill, strikingWith, target }
+};
+
+FighterSchema.methods.autoSelectDefenseCombatSkill = async function () {
+    // Filter combatSkills with discipline 'Defence' and get their indexes
+    const defenseIndexes = this.combatSkills
+        .map((cs, index) => cs.discipline === DisciplineTypes.Defence ? index : null)
+        .filter(index => index !== null);
+
+    // Select a random index from defenseIndexes
+    const randomIndex = getRandomElementFromArray(defenseIndexes);
+
+    // Populate the moveStatistics.move field for the selected combatSkill
+    await this.populate(`combatSkills.${randomIndex}.moveStatistics.move`);
+
+    // Access the populated move field
+    const populatedCombatSkill = this.combatSkills[randomIndex];
+    const move = populatedCombatSkill.moveStatistics.move;
+
+    const target = getRandomElementFromArray(move.targets);
+    const strikingLimb = getRandomElementFromArray(move.strikingLimb);
+    const pattern = getRandomElementFromArray(move.rangePattern);
+
+    return { combatSkill: populatedCombatSkill, target, strikingLimb, pattern };
+};
+
+function getRandomElementFromArray(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
+
+function getNextLimb(currentLimb) {
+    const limbs = Object.values(LimbTypes);
+    const currentIndex = limbs.indexOf(currentLimb);
+    const nextIndex = (currentIndex + 1) % limbs.length;
+    return limbs[nextIndex];
+}
+
+
+
 
 module.exports = mongoose.model('Fighter', FighterSchema);
+module.exports = mongoose.model('Attribute', AttributesSchema);
+module.exports = mongoose.model('Limb', LimbSchema);
+module.exports = mongoose.model('CombatSkills', CombatSkillsSchema);
 module.exports = {
-    LimbTypes
+    LimbTypes,
+    AttributeTypes,
+    CombatCategoryTypes,
+    DisciplineTypes,
+    INITIAL_ATTRIBUTE_POINTS,
 };

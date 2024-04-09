@@ -1,11 +1,18 @@
 const mongoose = require('mongoose');
-const { LimbTypes } = require('./Fighter');
+const { LimbTypes, DisciplineTypes, CombatCategoryTypes } = require('./Fighter');
 
 const { Schema } = mongoose;
 
+const RangeDamageTypes = {
+    Normal: "Normal",
+    Weak: "Weak"
+}
+
 const MoveList = [
     {
-        name: 'Boxing-Jab',
+        category: CombatCategoryTypes.Unarmed,
+        discipline: DisciplineTypes.Boxing,
+        name: 'Jab',
         targets: [LimbTypes.Head, LimbTypes.Torso],
         strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
         baseMoveDamage: 5,
@@ -14,9 +21,17 @@ const MoveList = [
         criticalChance: 5,
         canSevereLimb: false,
         hypeOnTargetHit: 5,
+        rangePattern: [
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 }],
+        ]
     },
     {
-        name: 'Boxing-Hook',
+        category: CombatCategoryTypes.Unarmed,
+        discipline: DisciplineTypes.Boxing,
+        name: 'Cross',
         targets: [LimbTypes.Head, LimbTypes.Torso],
         strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
         baseMoveDamage: 5,
@@ -25,9 +40,36 @@ const MoveList = [
         criticalChance: 5,
         canSevereLimb: false,
         hypeOnTargetHit: 5,
+        rangePattern: [
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 }],
+        ]
     },
     {
-        name: 'Boxing-Block',
+        category: CombatCategoryTypes.Unarmed,
+        discipline: DisciplineTypes.Boxing,
+        name: 'Hook',
+        targets: [LimbTypes.Head, LimbTypes.Torso],
+        strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
+        baseMoveDamage: 10,
+        expPerLand: 4,
+        energyCost: 10,
+        criticalChance: 10,
+        canSevereLimb: false,
+        hypeOnTargetHit: 8,
+        rangePattern: [
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 }],
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 }],
+        ]
+    },
+    {
+        category: CombatCategoryTypes.Unarmed,
+        discipline: DisciplineTypes.Boxing,
+        name: 'Block',
         targets: [LimbTypes.Head, LimbTypes.Torso],
         strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
         baseMoveDamage: 40,
@@ -36,10 +78,22 @@ const MoveList = [
         criticalChance: 0,
         canSevereLimb: false,
         hypeOnTargetHit: 0,
+        rangePattern: [
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 0 }],
+        ]
     },
 ];
 
+
 const MoveSchema = new Schema({
+    category: {
+        type: String,
+        enum: Object.values(CombatCategoryTypes), // Enum based on CombatCategoryTypes object
+    },
+    discipline: {
+        type: String,
+        enum: Object.values(DisciplineTypes)
+    },
     name: {
         type: String,
         required: true,
@@ -82,6 +136,24 @@ const MoveSchema = new Schema({
         type: Number,
         required: true,
     },
+    rangePattern: [
+        [
+            {
+                rangeDamage: {
+                    type: String,
+                    enum: Object.values(RangeDamageTypes),
+                },
+                x: {
+                    type: Number,
+                    default: 0
+                },
+                y: {
+                    type: Number,
+                    default: 0
+                }
+            }
+        ]
+    ]
 });
 
 MoveSchema.statics.Refresh = async function () {
@@ -106,14 +178,56 @@ MoveSchema.statics.Refresh = async function () {
 
 MoveSchema.statics.findMovesByCombatSkillAverage = async function (combatSkillAverageMap) {
     const moveSearchResults = [];
-  
+
     for (const [category, minLevel] of Object.entries(combatSkillAverageMap)) {
-      const moves = await this.find({ name: { $regex: category, $options: 'i' }, level: { $lt: minLevel } });
-      moveSearchResults.push(...moves);
+        const moves = await this.find({ name: { $regex: category, $options: 'i' }, level: { $lt: minLevel } });
+        moveSearchResults.push(...moves);
     }
-  
+
     return moveSearchResults;
-  };
-  
+};
+
+//using the xDistance and yDistance see if this move is in range with its aoe
+MoveSchema.methods.inRange = async function (xDistance, yDistance) {
+    for (const patterns of this.rangePattern) {
+        for (const pattern of patterns) {
+            // const xDiff = xDistance - pattern.x;
+            // const yDiff = yDistance - pattern.y;
+        
+            if (pattern.x >= xDistance && pattern.y >= yDistance) {
+                return { inRange: true, patterns };
+            }
+        }
+    }
+
+    return { inRange: false, patterns: null };
+}
+
+MoveSchema.methods.inRange = async function (xDistance, yDistance) {
+    for (const patterns of this.rangePattern) {
+        for (const pattern of patterns) {
+            // const xDiff = xDistance - pattern.x;
+            // const yDiff = yDistance - pattern.y;
+        
+            if (pattern.x >= xDistance && pattern.y >= yDistance) {
+                return { inRange: true, patterns };
+            }
+        }
+    }
+
+    return { inRange: false, patterns: null };
+}
+
+MoveSchema.methods.autoSelectPattern = async function(){
+    return this.rangePattern[Math.floor(Math.random() * this.rangePattern.length)];
+}
+MoveSchema.methods.autoSelectPatternTowardsOpponent = async function(){
+    return this.rangePattern[Math.floor(Math.random() * this.rangePattern.length)];
+}
+
 const Move = mongoose.model('Move', MoveSchema);
-module.exports = Move;
+module.exports = {
+    Move,
+    RangeDamageTypes,
+    MoveList,
+};

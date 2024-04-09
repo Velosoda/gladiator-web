@@ -11,14 +11,26 @@ require('./models/Move');
 require('./models/PracticePerson');
 require('./models/Fighter');
 require('./models/Attacks');
+require('./models/Fight');
+require('./models/FightCard');
+require('./models/FightFloor');
+require('./models/Arena');
+require('./models/Tournament');
+require('./models/Promotion');
 
 const movesRoutes = require('./routes/api/moves');
 const practiceRoutes = require('./routes/api/practice');
-const fightersRoutes = require('./routes/api/fighters');
+const fighterRoutes = require('./routes/api/fighter');
+const tournamentRoutes = require('./routes/api/tournament');
+const arenaRoutes = require('./routes/api/arena');
+const fightRoutes = require('./routes/api/fight');
 
-app.use('/api/moves', movesRoutes);
 app.use('/api/practice', practiceRoutes);
-app.use('/api/fighters', fightersRoutes);
+app.use('/api/moves', movesRoutes);
+app.use('/api/fighter', fighterRoutes);
+app.use('/api/fight', fightRoutes);
+app.use('/api/tournament', tournamentRoutes);
+app.use('/api/arena', arenaRoutes);
 
 var isProduction = process.env.NODE_ENV === 'production';
 

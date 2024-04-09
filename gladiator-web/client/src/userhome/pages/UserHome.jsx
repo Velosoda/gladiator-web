@@ -10,15 +10,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 
 import './ArenaDesigner.css';
 
-// const colorToTerrainMap = {
-//     'black': '-', //flat fighting ground
-//     'blue': 'xs', //knock out, safely/ minor damage
-//     'red': 'xd', //knock out deadly
-//     'white': '0', //where the "crowd" is. no white? crowd is still there just shows how small the ring is 
-//     'gray': '|'
-// }
-
-const TerrainTypes = {
+export const TerrainTypes = {
     CombatArea: 0,
     CriticalDamageArea: 1,
     KnockoutArea: 2,
@@ -207,7 +199,7 @@ const PixelDrawingComponent = ({ initialSize, onSubmit }) => {
             value: 'rc',
             quantity: 1,
             validation: (cell) => {
-                if (cell.markers.foreach(marker => marker.value === 'rc')) {
+                if (cell.markers.some(marker => marker.value === 'rc')) {
                     //Check for black middle 
                     const directions = ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"];
 
@@ -256,6 +248,7 @@ const PixelDrawingComponent = ({ initialSize, onSubmit }) => {
             color: '#100f8a',
             value: 'bc',
             quantity: 1,
+            validation: (cell) => {}
         }
     }
 
@@ -423,13 +416,6 @@ const PixelDrawingComponent = ({ initialSize, onSubmit }) => {
     };
 
     const validateGrid = () => {
-        //validate combat area
-        //validate cdz 
-        //validate koz
-        //validate markers
-
-        //Validate grid only one island max 
-
         let tempGrid = [...grid];
         let combatAreaCount = 0;
         let errors = [];
@@ -439,7 +425,7 @@ const PixelDrawingComponent = ({ initialSize, onSubmit }) => {
                 floors[currentCell.terrain]?.validation(currentCell);
 
                 // Validation based on markers
-                currentCell.markers.forEach(currentMarker => {
+                currentCell.markers.map(currentMarker => {
                     markers[currentMarker.type]?.validation(currentCell);
                 });
 
@@ -605,7 +591,7 @@ export const UserHome = () => {
     const initialCanvasSize = 3;
 
     const handleCanvasSubmit = (matrix) => {
-        console.log('Canvas Matrix:', matrix);
+        console.log('Canvas Matrix:', JSON.stringify(matrix, null, 2));
         // You can perform further actions with the matrix
     };
 

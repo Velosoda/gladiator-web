@@ -8,7 +8,7 @@
     "dev": "nodemon ./app.js",
     "stop": "lsof -ti :3000 | xargs kill",
     "test": "cross-env NODE_ENV=test jest --testTimeout=5000 --detectOpenHandles",
-    "test:watch": "jest --watch", 
+    "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
   },
   "keywords": [],
@@ -22,9 +22,11 @@
     "dotenv": "^16.4.1",
     "errorhandler": "^1.5.1",
     "express": "^4.18.2",
+    "express-async-handler": "^1.2.0",
     "express-jwt": "^8.4.1",
     "express-session": "^1.17.3",
     "jsonwebtoken": "^9.0.0",
+    "lodash": "^4.17.21",
     "method-override": "^3.0.0",
     "mongoose": "^7.1.0",
     "mongoose-unique-validator": "^4.0.0",
@@ -33,11 +35,13 @@
     "passport": "^0.6.0",
     "passport-local": "^1.0.0",
     "supertest": "^6.3.4",
-    "unirest": "^0.6.0"
+    "unirest": "^0.6.0",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
     "jest": "^29.7.0",
     "mongodb": "^6.3.0",
-    "mongodb-memory-server": "^9.1.6"
+    "mongodb-memory-server": "^9.1.6",
+    "verb": "^0.8.10"
   }
 }

@@ -23,8 +23,7 @@ const TurnSchema = new Schema({
         combatSkill: {
             type: Schema.Types.Mixed,
         },
-        pattern:
-        {
+        pattern: {
             rangeDamage: {
                 type: String,
                 enum: Object.values(Move.RangeDamageTypes),
@@ -38,7 +37,6 @@ const TurnSchema = new Schema({
                 default: 0
             }
         },
-
         strikingWith: {
             type: String,
             enum: Object.values(LimbTypes)
@@ -51,6 +49,7 @@ const TurnSchema = new Schema({
     attack: {
         combatSkill: {
             type: Schema.Types.Mixed,
+            default: null
         },
         strikingWith: {
             type: String,
@@ -61,40 +60,72 @@ const TurnSchema = new Schema({
             enum: Object.values(LimbTypes),
         },
         damage: {
-            type: Number
+            type: Number,
+            default: 0 
+        },
+        pattern: {
+            rangeDamage: {
+                type: String,
+                enum: Object.values(Move.RangeDamageTypes),
+            },
+            x: {
+                type: Number,
+                default: 0
+            },
+            y: {
+                type: Number,
+                default: 0
+            }
         }
     },
     moveTo: {
         cords: {
-            x: { type: Number },
-            y: { type: Number },
+            x: { type: Number, default: 0 },
+            y: { type: Number,  default: 0 },
         }
     },
     results: {
-        type: String,
-        default: ""
+        story:[{
+            type: String,
+            default: ""
+        }],
     },
 });
+TurnSchema.methods.setup = async function() {
+
+};
 
 TurnSchema.methods.run = async function () {
     await this.populate();
-    let result = ""
-    result = `${this.attacker.name} threw a ${this.attack.combatSkill.moveStatistics.move.name} at ${this.target.name}'s ${this.attack.target} \n`;
+    
+    if(this.attack.combatSkill.name === Move.RangeDamageTypes.Nothing){
+        this.results.story.push( `${this.attacker.name} did nothing`);
+        return;
+    }
+    this.results.story.push(`${this.attacker.name} moves to (${this.moveTo.cords.x}, ${this.moveTo.cords.y})\n`);
+    this.results.story.push( `${this.attacker.name} threw a ${this.attack.combatSkill.moveStatistics.move.name} at ${this.target.name}'s ${this.attack.target}\n`);
 
     //BALANCE POINT. If attacks barely do anything always then this needs be rebalanced 
     //This could be a stat inside of durability 
 
-    if (await this.target.damageAbsorption(this.attack, this.defense)) {
-        result = result.concat(`But ${this.target.name} ${this.defense.combatSkill.moveStatistics.move.name} the attack with their ${this.defense.strikingWith.replace(/([A-Z])/g, ' $1').trim()}\n`); // would be cool to past tense this 
+    if(this.defense.combatSkill === null){
+        this.results.story.push(`${this.target.name} does nothing\n`); // would be cool to past tense this 
+    }
+    else{
+        if (await this.target.damageAbsorption(this.attack, this.defense)) {
+            this.results.story.push(`But ${this.target.name} ${this.defense.combatSkill.moveStatistics.move.name} the attack with their ${this.defense.strikingWith.replace(/([A-Z])/g, ' $1').trim()}\n`); // would be cool to past tense this 
+        }
     }
 
     await this.target.applyDamage(this.attack.damage, this.attack.target);
 
-    result = result.concat(`For ${this.attack.damage} damage`);
-
-    this.results = result.toString();;
+    this.results.story.push(`Total Damage:  ${this.attack.damage}`);
 
     return await this.save();
+};
+
+TurnSchema.methods.stringifyStory = function(){
+    return this.results.story.join("");
 };
 
 module.exports = mongoose.model('Turn', TurnSchema);

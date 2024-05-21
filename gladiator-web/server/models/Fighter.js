@@ -2,6 +2,8 @@ const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
 const Move = require('../models/Move');
+const { MarkerTypes } = require('./FightFloor');
+const { getRandomElementFromArray } = require('./utils');
 
 const INITIAL_ATTRIBUTE_POINTS = 15;
 
@@ -225,7 +227,7 @@ FighterSchema.methods.applyDamage = async function (damage, targetLimb) {
         }
     });
 
-    if(limb == null) throw new Error(`limb not found: ${targetLimb}`);
+    if (limb == null) throw new Error(`limb not found: ${targetLimb}`);
 
     let leftOver = 0
 
@@ -301,11 +303,9 @@ function patternsHit(attackerX, attackerY, defenderX, defenderY) {
 
 //This needs to return the position to move to 
 //Should be moving towards the other fighter
-FighterSchema.methods.autoMoveToPosition = function (fightFloor) {
-    // console.log(fightFloor.getFighterCords(this._id.toString()).cords);
-
+FighterSchema.methods.autoSetupMovement = function (fightFloor) {
     let { x, y } = fightFloor.getFighterCords(this._id.toString()).cords;
-    let { stepsX: oppXDistance, stepsY: oppYDistance, x: opponentX, y: opponentY, opponentId } = fightFloor.rangeToOpponent(x, y);
+    let { stepsX: oppXDistance, stepsY: oppYDistance, x: opponentX, y: opponentY, opponentId } = fightFloor.rangeToNearestFighter(x, y);
     let movementAllowance = fightFloor.sizeExponent; //todo add some attribute that helps heree
 
     // Calculate the distances between x, y and opponentX, opponentY
@@ -337,8 +337,13 @@ FighterSchema.methods.autoMoveToPosition = function (fightFloor) {
 
         movementAllowance--;
     }
+    console.log("MOVEMENT SET : ", { x, y })
     return { x, y }
 };
+
+FighterSchema.methods.autoSelectCell = function (listOfCells) {
+    return listOfCells[Math.floor(Math.random() * listOfCells.length)];
+}
 
 FighterSchema.methods.inFightRecovery = async function () {
     const baseRecoveryPoints = 30.0
@@ -395,18 +400,56 @@ FighterSchema.methods.getAvailableMoves = async function (xMod, yMod) {
     let movesAndPatterns = [];
 
     for (let index = 0; index < this.combatSkills.length; index++) {
-        const combatSkill = this.combatSkills[index];
         await this.populate(`combatSkills.${index}.moveStatistics.move`);
+        const combatSkill = this.combatSkills[index];
 
-        const rangeStats = await combatSkill.moveStatistics.move.inRange(xMod, yMod)
-        if (rangeStats.inRange &&
-            combatSkill.discipline != DisciplineTypes.Defence) {
-            movesAndPatterns.push({ combatSkill, rangeStats });
+        console.log({ combatSkill })
+
+        const rangeStats = combatSkill.moveStatistics.move.inRange(xMod, yMod)
+        if (rangeStats.inRange && combatSkill.discipline != DisciplineTypes.Defence) {
+            const patterns = rangeStats.patterns
+            movesAndPatterns.push({ combatSkill, patterns });
         }
     }
 
     return movesAndPatterns;
 }
+
+//This will take the cords, loop through the list of patterns and determine if theres a fighter in any of cords that comeout of the patterns 
+//and then return the move and that pattern as a list 
+FighterSchema.methods.movesInRangeOfAnotherFighter = async function (fightFloor) {
+    const movesAndPatterns = [];
+    const attackerCords = fightFloor.getFighterCords(this._id.toString()).cords;
+
+    for (const [index, combatSkill] of this.combatSkills.entries()) {
+        // Assuming `populate` is needed here
+        await this.populate(`combatSkills.${index}.moveStatistics.move`);
+
+        if (combatSkill.discipline !== DisciplineTypes.Defence) {
+            for (const pattern of combatSkill.moveStatistics.move.rangePattern) {
+                pattern.forEach(({ x, y, rangeDamage }) => {
+                    const targetX = attackerCords.x + x;
+                    const targetY = attackerCords.y + y;
+
+                    //Might be able to get the
+                    if (targetY >= 0 && targetY < fightFloor.grid.length && targetX >= 0 && targetX < fightFloor.grid[targetY].length) {
+                        const cellMarkers = fightFloor.grid[targetY][targetX].markers;
+                        const fighterMarker = cellMarkers.find(marker => marker.type === MarkerTypes.Fighter);
+                        if (fighterMarker) {
+                            movesAndPatterns.push({
+                                combatSkill,
+                                cords: { x: targetX, y: targetY },
+                                rangeDamage,
+                                opponentId: fighterMarker.value
+                            });
+                        }
+                    }
+                });
+            }
+        }
+    }
+    return movesAndPatterns;
+};
 
 FighterSchema.methods.autoSelectAttack = async function (availableAttacks) {
     // Generate random number between 0 and totalWeight
@@ -446,7 +489,7 @@ FighterSchema.methods.autoSelectAttack = async function (availableAttacks) {
     return { combatSkill, strikingWith, target }
 };
 
-FighterSchema.methods.autoSelectDefenseCombatSkill = async function () {
+FighterSchema.methods.autoSelectDefensiveCombatSkill = async function () {
     // Filter combatSkills with discipline 'Defence' and get their indexes
     const defenseIndexes = this.combatSkills
         .map((cs, index) => cs.discipline === DisciplineTypes.Defence ? index : null)
@@ -468,10 +511,6 @@ FighterSchema.methods.autoSelectDefenseCombatSkill = async function () {
 
     return { combatSkill: populatedCombatSkill, target, strikingLimb, pattern };
 };
-
-function getRandomElementFromArray(array) {
-    return array[Math.floor(Math.random() * array.length)];
-}
 
 function getNextLimb(currentLimb) {
     const limbs = Object.values(LimbTypes);

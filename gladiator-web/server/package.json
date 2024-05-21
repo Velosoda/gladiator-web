@@ -7,9 +7,12 @@
     "start": "node ./app.js",
     "dev": "nodemon ./app.js",
     "stop": "lsof -ti :3000 | xargs kill",
-    "test": "cross-env NODE_ENV=test jest --testTimeout=5000 --detectOpenHandles",
+    "test": "cross-env NODE_ENV=test jest --testTimeout=5000 --detectOpenHandles --runInBand",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage"
+  },
+  "jest": {
+    "testEnvironment": "node"
   },
   "keywords": [],
   "author": "",
@@ -40,6 +43,7 @@
   },
   "devDependencies": {
     "jest": "^29.7.0",
+    "mockingoose": "^2.16.2",
     "mongodb": "^6.3.0",
     "mongodb-memory-server": "^9.1.6",
     "verb": "^0.8.10"

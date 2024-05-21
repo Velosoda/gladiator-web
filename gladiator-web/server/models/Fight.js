@@ -1,14 +1,23 @@
 const mongoose = require('mongoose');
 const { Schema } = mongoose;
 
-const Arena = require('../models/Arena');
-const Turn = require('../models/Turn');
-const Fighter = require('../models/Fighter');
-const Move = require('../models/Move');
+require('./Move');
+require('./Arena');
+require('./FightFloor');
+require('./Fighter');
+require('./Fight');
+require('./Turn');
+
+const Arena = mongoose.model('Arena');
+const Turn = mongoose.model('Turn');
+const Move = mongoose.model('Move');
+const Fighter = mongoose.model('Fighter');
+const FightFloor = mongoose.model('FightFloor');
+
 
 const { MarkerTypes } = require('./FightFloor');
 const { CombatCategoryTypes, AttributeTypes, LimbTypes } = require('./Fighter');
-
+const { getRandomElementFromArray } = require('./utils');
 
 const FightGradeTypes = {
     A: 'A',
@@ -19,22 +28,11 @@ const FightGradeTypes = {
     NaN: NaN,
 };
 
-const FightFrame = new Schema({
-    grid: {
-        type: String,
-    }
-});
-
-
 const FightSchema = new Schema({
-    redCornerFighter: {
+    fighters: [{
         type: Schema.Types.ObjectId,
         ref: 'Fighter'
-    },
-    blueCornerFighter: {
-        type: Schema.Types.ObjectId,
-        ref: 'Fighter'
-    },
+    }],
     winner: {
         type: Schema.Types.ObjectId,
         ref: 'Fighter'
@@ -43,7 +41,14 @@ const FightSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: 'Fighter'
     },
-    fightReplay: [FightFrame],
+    arena: {
+        type: Schema.Types.ObjectId,
+        ref: 'Arena'
+    },
+    fightReplay: [{
+        type: Schema.Types.ObjectId,
+        ref: 'FightFloor'
+    }],
     combatCategory: {
         type: String,
         enum: Object.values(CombatCategoryTypes),
@@ -75,6 +80,16 @@ const FightSchema = new Schema({
         type: Number,
         default: 0
     },
+    scoreBoard: [{
+        fighter: {
+            type: Schema.Types.ObjectId,
+            ref: 'Fighter'
+        },
+        score: {
+            type: Number,
+            default: 0
+        }
+    }]
 });
 
 
@@ -92,203 +107,147 @@ FightSchema.methods.addTurns = async function (fighters, turns) {
                 break;
             }
         }
-        nextTurns.push({
-            turn: i + 1,
-            attacker: nextFighter,
-            target: null,
-            actions: {
-                opponentDefence: null,
-                moveTo: {
-                    x: null,
-                    y: null,
-                },
-                attack: {
-                    move: null,
-                    strikingWith: null,
-                    target: null,
-                    damage: null,
-                }
-            },
-            results: []
-        });
-
+        const round = await new Turn({ turn: i + 1, attacker: nextFighter, target: null });
+        this.turns.push(round);
     }
-
-    return nextTurns;
+    await this.save();
 };
 
-FightSchema.methods.simulate = async function (arenaId) {
-    let redCornerFighter;
-    let blueCornerFighter;
-    let arena;
-    let fightFloor;
+FightSchema.methods.simulate = async function () {
+    // let arena = await Arena.findById(this.arena);
+    this.fighters.forEach(async (fighter, index) => {
+        await this.populate(`fighters.${index}`);
+    });
+    // let fightFloor = await FightFloor.find();
 
-    //DB Tries
-    try {
-        // Get Red corner fighter
-        redCornerFighter = await this.model('Fighter').findById(this.redCornerFighter);
-        //Get Blue corner fighter
-        blueCornerFighter = await this.model('Fighter').findById(this.blueCornerFighter);
-
-        //Get Arena and fight floor 
-        arena = await Arena.find("Arena").findById(arenaId);
-        fightFloor = arena.fightFloor.populate(); // need the real object
-
-        // adds fighters to the fight floor
-        fightFloor.addFighters([redCornerFighter, blueCornerFighter]);
-
-        // Ensure redCornerFighter exists
-        if (!redCornerFighter) {
-            throw new Error('Red corner fighter not found');
+    await this.populate({
+        path: 'arena',
+        model: 'Arena',
+        populate: {
+            path: 'fightFloor',
+            model: 'FightFloor'
         }
-        if (!blueCornerFighter) {
-            throw new Error('blue Corner Fighter not found');
-        }
-        if (!arena) {
-            throw new Error('blue Corner Fighter not found');
-        }
-    } catch (error) {
-        console.error('Error simulating fight:', error);
-        throw error;
+    });
+
+
+    // console.log({ arena, fighters, fightFloor })
+    console.log(this)
+
+    // fightFloor.addFighters(fighters);
+
+    this.fightReplay.push(this.arena.fightFloor);
+
+    if (!this.arena) {
+        throw new Error('Arena not found');
     }
 
-    //Determine what the order is going to be for this fight = turns
-    //default
-    // turn: 0,
-    // currentfighter: 
-    // targetOpponent: 
-    // actions: {
-    //     opponentDefence: {
-    //         opponentDefenseCombatSkillMove, 
-    //         opponentDefenseDirection
-    //     },
-    //     moveTo: {
-    //         cords: {
-    //             x: null,
-    //             y: null,
-    //         }
-    //     }
-    //     attack: 
-    // {
-    //     move,
-    //     strikingWith,
-    //     target,
-    //     damage
-    // }
-    // results: {}
+    await this.addTurns(this.fighters, 10);
 
-    let fightTurns = addTurns([redCornerFighter, blueCornerFighter], 10);
-
-    // await TurnSchema.insertMany(fightTurns);
-
-    //loop thruogh
-
-    //for every turn the fighter in that turn will do the following based on certain decisions
     let fightLog = [];
+    while (this.isOver() == false)
+        for (let round = 0; round < this.turns.length; round++) {
+            const activeTurn = this.turns[round];
+            const attacker = activeTurn.attacker;
 
-    let currentTurn = fightTurns[0];
+            attacker.inFightRecovery();
 
-    for (let turn = 0; turn < fightTurns.length; turn++) {
-        let currentFightTurn = fightTurns;
-        let currentFighter = fightTurns[turn].currentfighter;
+            const attackerPosition = this.arena.fightFloor.getFighterCords(attacker._id.toString()).cords;
 
-        currentFighter.inFightRecovery();
+            const possibleCellsToMoveTo = this.arena.fightFloor.getNeighboringCells(attackerPosition.x, attackerPosition.y);
 
-        currentFightTurn.action.moveTo = currentFighter.autoMoveToPosition(fightFloor);
-        fightFloor.move(currentFighter, currentFightTurn.action.moveTo)
+            const selectedCell = attacker.autoSelectCell(possibleCellsToMoveTo);
+            activeTurn.moveTo.cords = selectedCell.cords;
 
-        currentFightTurn.results.append(`${currentFighter.name} moves to ${currentFightTurn.action.moveTo}`);
+            this.fightReplay.push(this.arena.fightFloor.move(attacker, selectedCell.cords));
 
-        let { opponentX, opponentY, distance, xMod, yMod, opponentId } =
-            fightFloor.rangeToOpponent(currentFightTurn.action.moveTo.x, currentFightTurn.action.moveTo.y);
+            const moveOptions = await attacker.movesInRangeOfAnotherFighter(selectedCell.cords, this.arena.fightFloor.grid);
 
-        let opponent = [redCornerFighter, blueCornerFighter].find(fighter => fighter.id === opponentId);
+            //We found a fighter the attacker can hit after they moved 
+            if (movesInRange.length > 0) {
 
-        currentFightTurn.targetOpponent = opponent;
+                //build attack.
+                const selectedMoveOption = getRandomElementFromArray(moveOptions);
+                const { combatSkill, cords, rangeDamage, opponentId } = selectedMoveOption;
+                const selectedStrikingLimb = getRandomElementFromArray(combatSkill.moveStatistics.move.strikingLimb);
+                const selectedTargetLimb = getRandomElementFromArray(combatSkill.moveStatistics.move.targets);
 
-        //gets all moves in range
-        let availableMoves = currentFighter.getAvailableMoves(xMod, yMod)
+                activeTurn.attack = {
+                    combatSkill,
+                    strikingWith: selectedStrikingLimb,
+                    target: selectedTargetLimb,
+                    damage: combatSkill.moveStatistics.move.baseMoveDamage,
+                    pattern: {
+                        rangeDamage,
+                        x: cords.x,
+                        y: cords.y
+                    }
+                };
 
-        if (availableMoves.length > 0) {
-            const strike = currentFighter.autoSelectAttack(availableCombatSkills);
+                //build defense 
+                const opponent = fighters.find((fighter) => fighter._id.toString() === opponentId);
 
-            currentFightTurn.action.attack = {
-                move: strike.combatSkill,
-                strikingWith: strike.strikingWith,
-                target: strike.target,
-                //We need to choose the pattern that we should be using to hit this guy unless we just loop
-            };
+                // Update opponent values
+                const { combatSkill: targetCombatSkill, strikingLimb: targetStrikingLimb, target: targetMovetarget, pattern: targetPattern } = opponent.autoSelectDefensiveCombatSkill();
 
-            const opponentDefenseCombatSkillMove = await Move.findById(
-                opponent.autoSelectDefenseCombatSkill().moveStatistics.move
-            );
+                activeTurn.target = opponent;
+                activeTurn.defense = {
+                    combatSkill: targetCombatSkill,
+                    strikingWith: targetStrikingLimb,
+                    target: targetMovetarget,
+                    pattern: {
+                        rangeDamage: targetPattern.rangeDamage,
+                        x: targetPattern.x,
+                        y: targetPattern.y
+                    }
+                };
+            }
+            // go straight to end of turn after movement
+            else {
+                activeTurn.attack = {
+                    combatSkill: { name: Move.RangeDamageTypes.None }
+                }
+            }
 
-            const opponentDefenseDirection = opponentDefenseCombatSkillMove.autoSelectPattern();
-
-            currentFightTurn.action.opponentDefence = { opponentDefenseCombatSkillMove, opponentDefenseDirection } //{chosenMove, chosenDirection}
-
-            const damageReport = currentTurn.run();
-
-            currentFightTurn.results.append(
-                `
-                    ${currentFighter.name} throws a 
-                    ${currentFightTurn.action.attack.move.name} with their 
-                    ${currentFightTurn.action.attack.strikingWith} to 
-                    ${opponent.name}'s ${currentFightTurn.action.attack.target} for
-                    ${currentFightTurn.action.attack.damage}
-                `
-            );
-
-            currentFightTurn.results.append(
-                `
-                    ${opponent.name} 
-                    ${opponentDefenseCombatSkillMove.name} ${currentFighter.name}'s attack causing 
-                    ${damageReport.damageTaken} to their ${damageReport.damagedLimb}
-                `
-            );
+            activeTurn.run();
+            this.currentExcitement += activeTurn.calculateHype();
         }
+    this.save();
+};
 
-        currentFighter.addExp(calculateTurnExp(currentFightTurn));// will check for a level up and do so
+FightSchema.methods.checkScore = function () {
+    //looks at the health of a fighter and determines if a point was scored
+    //returns a map of the fighter scores : { fighter: , score: }
 
-        fightLog.append(currentFightTurn);
+};
 
-        this.currentExcitement += calculateHype(currentFightTurn);
-
-        //add more turns 
-        if (fightTurns[fightTurns.length - 1].results.length != 0) {
-            fightTurns.concat(addTurns([redCornerFighter, blueCornerFighter], 10));
-        }
-
-        if (this.isOver() === true) {
-            break;
+FightSchema.methods.isOver = function () {
+    for (const fighter in this.scoreboard) {
+        const score = this.scoreboard[fighter];
+        if (score >= this.winningScore) {
+            return true;
         }
     }
-
-    clearUnusedTurns(fightTurns);
-
-    //New fightlog entry is added
-    //if the grid changed that needs to go in the fight log
-
+    return false;
 };
 
-function clearUnusedTurns(fightTurns) {
-    // for (const turn of)
-};
+function buildAttack(movePatternMappings) {
+    const strike = currentFighter.autoSelectAttack(movePatternMappings.map(item => item.combatSkills)
+        .flat());
 
-// fight: {
-//     teams:[
-//         team: {
-//             id
-//             fighters: [
-//                 fighter
-//             ],
-//         },
-//     ]
-// }
+    currentFightTurn.action.attack = {
+        move: strike.combatSkill,
+        strikingWith: strike.strikingWith,
+        target: strike.target,
+        patterns: "sad"
+        //We need to choose the pattern that we should be using to hit this guy unless we just loop
+    };
+}
 
-
+async function buildDefense() {
+    currentFightTurn.action.defense = await opponent.autoSelectDefensiveCombatSkill();
+}
 
 module.exports = mongoose.model('Fight', FightSchema);
 module.exports = {
     FightGradeTypes
-}
+};

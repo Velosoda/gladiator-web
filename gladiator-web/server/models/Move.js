@@ -4,6 +4,7 @@ const { LimbTypes, DisciplineTypes, CombatCategoryTypes } = require('./Fighter')
 const { Schema } = mongoose;
 
 const RangeDamageTypes = {
+    Nothing: "Nothing",
     Normal: "Normal",
     Weak: "Weak"
 }
@@ -27,6 +28,20 @@ const MoveList = [
             [{ rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 }],
             [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 }],
         ]
+    },
+    {
+        category: CombatCategoryTypes.Unarmed,
+        discipline: DisciplineTypes.Boxing,
+        name: 'Nothing',
+        targets: [],
+        strikingLimb: [],
+        baseMoveDamage: 0,
+        expPerLand: 0,
+        energyCost: 0,
+        criticalChance: 0,
+        canSevereLimb: false,
+        hypeOnTargetHit: 0,
+        rangePattern: [{ rangeDamage: RangeDamageTypes.Nothing, x: 0, y: 0 }]
     },
     {
         category: CombatCategoryTypes.Unarmed,
@@ -188,7 +203,7 @@ MoveSchema.statics.findMovesByCombatSkillAverage = async function (combatSkillAv
 };
 
 //using the xDistance and yDistance see if this move is in range with its aoe
-MoveSchema.methods.inRange = async function (xDistance, yDistance) {
+MoveSchema.methods.inRange = function (xDistance, yDistance) {
     for (const patterns of this.rangePattern) {
         for (const pattern of patterns) {
             // const xDiff = xDistance - pattern.x;
@@ -203,27 +218,12 @@ MoveSchema.methods.inRange = async function (xDistance, yDistance) {
     return { inRange: false, patterns: null };
 }
 
-MoveSchema.methods.inRange = async function (xDistance, yDistance) {
-    for (const patterns of this.rangePattern) {
-        for (const pattern of patterns) {
-            // const xDiff = xDistance - pattern.x;
-            // const yDiff = yDistance - pattern.y;
-        
-            if (pattern.x >= xDistance && pattern.y >= yDistance) {
-                return { inRange: true, patterns };
-            }
-        }
-    }
-
-    return { inRange: false, patterns: null };
-}
-
-MoveSchema.methods.autoSelectPattern = async function(){
+MoveSchema.methods.autoSelectPattern = function(){
     return this.rangePattern[Math.floor(Math.random() * this.rangePattern.length)];
 }
-MoveSchema.methods.autoSelectPatternTowardsOpponent = async function(){
-    return this.rangePattern[Math.floor(Math.random() * this.rangePattern.length)];
-}
+// MoveSchema.methods.autoSelectPatternTowardsOpponent = function(){
+//     return this.rangePattern[Math.floor(Math.random() * this.rangePattern.length)];
+// }
 
 const Move = mongoose.model('Move', MoveSchema);
 module.exports = {

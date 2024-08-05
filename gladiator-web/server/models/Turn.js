@@ -61,7 +61,7 @@ const TurnSchema = new Schema({
         },
         damage: {
             type: Number,
-            default: 0 
+            default: 0
         },
         pattern: {
             rangeDamage: {
@@ -81,37 +81,41 @@ const TurnSchema = new Schema({
     moveTo: {
         cords: {
             x: { type: Number, default: 0 },
-            y: { type: Number,  default: 0 },
+            y: { type: Number, default: 0 },
         }
     },
     results: {
-        story:[{
+        story: [{
             type: String,
             default: ""
         }],
     },
 });
-TurnSchema.methods.setup = async function() {
+TurnSchema.methods.setup = async function () {
+
+};
+
+TurnSchema.methods.calculateHype = async function () {
 
 };
 
 TurnSchema.methods.run = async function () {
     await this.populate();
-    
-    if(this.attack.combatSkill.name === Move.RangeDamageTypes.Nothing){
-        this.results.story.push( `${this.attacker.name} did nothing`);
+
+    if (this.attack.combatSkill.name === Move.RangeDamageTypes.Nothing) {
+        this.results.story.push(`${this.attacker.name} did nothing`);
         return;
     }
     this.results.story.push(`${this.attacker.name} moves to (${this.moveTo.cords.x}, ${this.moveTo.cords.y})\n`);
-    this.results.story.push( `${this.attacker.name} threw a ${this.attack.combatSkill.moveStatistics.move.name} at ${this.target.name}'s ${this.attack.target}\n`);
+    this.results.story.push(`${this.attacker.name} threw a ${this.attack.combatSkill.moveStatistics.move.name} at ${this.target.name}'s ${this.attack.target}\n`);
 
     //BALANCE POINT. If attacks barely do anything always then this needs be rebalanced 
     //This could be a stat inside of durability 
 
-    if(this.defense.combatSkill === null){
+    if (this.defense.combatSkill === null) {
         this.results.story.push(`${this.target.name} does nothing\n`); // would be cool to past tense this 
     }
-    else{
+    else {
         if (await this.target.damageAbsorption(this.attack, this.defense)) {
             this.results.story.push(`But ${this.target.name} ${this.defense.combatSkill.moveStatistics.move.name} the attack with their ${this.defense.strikingWith.replace(/([A-Z])/g, ' $1').trim()}\n`); // would be cool to past tense this 
         }
@@ -124,7 +128,7 @@ TurnSchema.methods.run = async function () {
     return await this.save();
 };
 
-TurnSchema.methods.stringifyStory = function(){
+TurnSchema.methods.stringifyStory = function () {
     return this.results.story.join("");
 };
 

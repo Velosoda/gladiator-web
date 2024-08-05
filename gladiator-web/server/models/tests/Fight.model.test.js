@@ -7,16 +7,19 @@ require('../Fighter');
 require('../FightFloor');
 require('../Fight');
 require('../Arena');
+require('../Turn');
 
 const Fighter = mongoose.model('Fighter');
 const Move = mongoose.model('Move');
 const FightFloor = mongoose.model('FightFloor');
 const Fight = mongoose.model('Fight');
 const Arena = mongoose.model('Arena');
+const Turn = mongoose.model('Turn');
+
 const { Types } = mongoose;
 
 
-const { CombatCategoryTypes } = require("../Fighter");
+const { CombatCategoryTypes, LimbTypes } = require("../Fighter");
 const { randomFighter, defaultArena, movesList, ThreeByThreeFightFloor } = require("./fixtures");
 const { MarkerTypes } = require("../FightFloor");
 
@@ -45,38 +48,36 @@ describe('FightFloor Model', () => {
         // }
     });
 
-    test('addTurns creates an array of turns where each fighter goes once ', async () => {
-        // Mock Math.random to return specific values
-        const mockRandom = jest.spyOn(Math, 'random')
-            .mockReturnValueOnce(0.1) // First fighter
-            .mockReturnValueOnce(0.4) // First fighter
-            .mockReturnValueOnce(0.6) // Second fighter
-            .mockReturnValueOnce(0.8); // Second fighter
+    // test('addTurns creates an array of turns where each fighter goes once ', async () => {
+    //     // Mock Math.random to return specific values
+    //     const mockRandom = jest.spyOn(Math, 'random')
+    //         .mockReturnValueOnce(0.1) // First fighter
+    //         .mockReturnValueOnce(0.4) // First fighter
+    //         .mockReturnValueOnce(0.6) // Second fighter
+    //         .mockReturnValueOnce(0.8); // Second fighter
 
-        // Define your fighters and turns
-        const turns = 4;
+    //     // Define your fighters and turns
+    //     const turns = 4;
 
-        // Call the function under test
-        let testFight = await new Fight(fight);
-        testFight.addTurns(fighters, turns);
+    //     // Call the function under test
+    //     let testFight = await new Fight(fight);
+    //     testFight.addTurns(fighters, turns);
 
-        // Assert that the result matches the expected order
-        expect(testFight[0].attacker._id).toEqual(fighters[0]._id);
-        expect(testFight[1].attacker._id).toEqual(fighters[0]._id);
-        expect(testFight[2].attacker._id).toEqual(fighters[1]._id);
-        expect(testFight[3].attacker._id).toEqual(fighters[1]._id);
+    //     // Assert that the result matches the expected order
+    //     expect(testFight[0].attacker._id).toEqual(fighters[0]._id);
+    //     expect(testFight[1].attacker._id).toEqual(fighters[0]._id);
+    //     expect(testFight[2].attacker._id).toEqual(fighters[1]._id);
+    //     expect(testFight[3].attacker._id).toEqual(fighters[1]._id);
 
-        // Restore the original Math.random function
-        mockRandom.mockRestore();
-    });
-    test.only('Run Fight returns a winner and a loser', async () => {
-        let fightFloor = await FightFloor.create(ThreeByThreeFightFloor()); 
-        let fighter1 = await Fighter.create(randomFighter());
-        let fighter2 = await Fighter.create(randomFighter());
+    //     // Restore the original Math.random function
+    //     mockRandom.mockRestore();
+    // });
+
+    test('addTurns returns the expected array structure of rounds and turns per round', async () => {
+        let fightFloor = await FightFloor.create(ThreeByThreeFightFloor());
+        let fighter1 = await Fighter.create(randomFighter("fighter1"));
+        let fighter2 = await Fighter.create(randomFighter("fighter2"));
         let arena = await Arena.create(defaultArena(fightFloor._id));
-
-        // console.log({ fightFloor, fighter1, fighter2, arena });
-
         fight = await Fight.create({
             fighters: [fighter1, fighter2],
             arena: arena._id,
@@ -84,14 +85,105 @@ describe('FightFloor Model', () => {
             loser: null,
             fightReplay: [],
             combatCategory: CombatCategoryTypes.Unarmed,
-            turns: [],
             _id: new mongoose.Types.ObjectId(),
         });
 
+        await fight.addTurns();
+
+        const turns = await Turn.find({ _id: { $in: fight.turns.flat() } })
+        const countObject = {};
+        for(const turn of turns){
+            if (countObject[turn.attacker]) {
+                countObject[turn.attacker] += 1;
+            } else {
+                countObject[turn.attacker] = 1;
+            }
+        }
+
+        console.log({countObject})
+
+        expect(fight.turns.length).toEqual(fight.rounds);
+        expect(fight.turns[0].length).toEqual(fight.turnsPerRound);
+    });
+
+    test.only('Run Fight returns a winner and a loser', async () => {
+        let fightFloor = await FightFloor.create(ThreeByThreeFightFloor());
+        let fighter1 = await Fighter.create(randomFighter("fighter1"));
+        let fighter2 = await Fighter.create(randomFighter("fighter2"));
+        let arena = await Arena.create(defaultArena(fightFloor._id));
+        fight = await Fight.create({
+            fighters: [fighter1._id, fighter2._id],
+            arena: arena._id,
+            winner: null,
+            loser: null,
+            fightReplay: [],
+            combatCategory: CombatCategoryTypes.Unarmed,
+            _id: new mongoose.Types.ObjectId(),
+        });
 
         await fight.simulate();
-        
+
         expect(fight.winner).not.toEqual(null);
         expect(fight.loser).not.toEqual(null);
+    });
+
+    test('checkScore returns the desired object ', async () => {
+
+        let fightFloor = await FightFloor.create(ThreeByThreeFightFloor());
+        let fighter1 = await Fighter.create(randomFighter());
+        let fighter2 = await Fighter.create(randomFighter());
+        let arena = await Arena.create(defaultArena(fightFloor._id));
+        const turns = [
+            new Turn({
+                attacker: new mongoose.Types.ObjectId('605c72ef5d1b4a2e10f69461'),
+                attack: {
+                    target: LimbTypes.LeftArm,
+                    damage: 10
+                }
+            }),
+            new Turn({
+                attacker: new mongoose.Types.ObjectId('605c72ef5d1b4a2e10f69461'),
+                attack: {
+                    target: LimbTypes.LeftArm,
+                    damage: 10
+                }
+            }),
+            new Turn({
+                attacker: new mongoose.Types.ObjectId('605c72ef5d1b4a2e10f69461'),
+                attack: {
+                    target: LimbTypes.RightArm,
+                    damage: 15
+                }
+            }),
+            new Turn({
+                attacker: new mongoose.Types.ObjectId('605c72ef5d1b4a2e10f69462'),
+                attack: {
+                    target: LimbTypes.LeftArm,
+                    damage: 20
+                }
+            }),
+            new Turn({
+                attacker: new mongoose.Types.ObjectId('605c72ef5d1b4a2e10f69462'),
+                attack: {
+                    target: LimbTypes.Head,
+                    damage: 20
+                }
+            })
+        ];
+        fight = await Fight.create({
+            fighters: [fighter1, fighter2],
+            arena: arena._id,
+            winner: null,
+            loser: null,
+            fightReplay: [],
+            combatCategory: CombatCategoryTypes.Unarmed,
+            turns: turns,
+            _id: new mongoose.Types.ObjectId(),
+        });
+
+        result = fight.checkScore();
+
+        expect(result.get('605c72ef5d1b4a2e10f69461')).toEqual(2);
+        expect(result.get('605c72ef5d1b4a2e10f69462')).toEqual(7);
     });
 });

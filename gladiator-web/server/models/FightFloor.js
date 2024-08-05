@@ -96,7 +96,6 @@ FightFloorSchema.methods.addFighters = async function (fighters) {
         });
     })
 
-
     if (remainingFighters.length > 0) {
         let isInList
 
@@ -145,7 +144,7 @@ FightFloorSchema.methods.getFighterCords = function (fighterId) {
     }
 };
 
-FightFloorSchema.methods.move = function (fighter, cord) {
+FightFloorSchema.methods.move = async function (fighter, cord) {
     const startingLocation = this.getFighterCords(fighter._id.toString());
 
     let markerToAdd;
@@ -161,15 +160,10 @@ FightFloorSchema.methods.move = function (fighter, cord) {
     //add the fighter to the new marker
     this.grid[cord.y][cord.x].markers.push(markerToAdd);
 
-    // console.log(`Fighter: ${fighter._id}\n Should Be here ${this.grid[cord.y][cord.x]}\n this should not contain a fighter ${this.grid[startingLocation.cords.y][startingLocation.cords.x]}`);
-
-    this.save();
-    return this;
+    await this.save();
 };
 
 FightFloorSchema.methods.rangeToNearestFighter = function (currentFighter, startX, startY) {
-
-    console.log({ startX, startY });
 
     const rows = this.grid.length;
     const cols = this.grid[0].length;
@@ -178,8 +172,6 @@ FightFloorSchema.methods.rangeToNearestFighter = function (currentFighter, start
             return marker.value;
         }
     });
-
-    console.log({ currentFighterMarker });
 
     const visited = new Set();
     const queue = [{ x: startX, y: startY, stepsX: 0, stepsY: 0 }];
@@ -236,8 +228,6 @@ FightFloorSchema.methods.getNeighboringCells = function (fromX, fromY) {
         });
     }
 
-    // console.log(JSON.stringify(allPossibleCords));
-
     // Filter the possibleCords based on grid boundaries and cell markers
     let filteredPossibleCords = [];
 
@@ -262,10 +252,8 @@ FightFloorSchema.methods.getNeighboringCells = function (fromX, fromY) {
         }
     }
 
-    // console.log({ filteredPossibleCords })
     return filteredPossibleCords;
 };
-
 
 module.exports = mongoose.model('FightFloor', FightFloorSchema);
 module.exports = mongoose.model('Marker', MarkerSchema);

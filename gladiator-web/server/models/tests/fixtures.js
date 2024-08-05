@@ -21,9 +21,9 @@ const defaultArena = (fightFloorId) => {
     }
 }
 
-const randomFighter = () => {
+const randomFighter = (name= 'Test Fighter') => {
     return {
-        name: "",
+        name: name,
         health: {
             limbs: [
                 {
@@ -87,19 +87,19 @@ const randomFighter = () => {
             attributesList: [
                 {
                     name: "Strength",
-                    value: Math.floor(Math.random() * (20 - 0 + 1)) + 0,
+                    value: Math.floor(Math.random() * 20) + 1,
                     derivedStatistics: ["stat1", "stat2"],
                     effects: 5,
                 },
                 {
                     name: "Speed",
-                    value: Math.floor(Math.random() * (20 - 0 + 1)) + 0,
+                    value: Math.floor(Math.random() * 20) + 1,
                     derivedStatistics: ["stat3", "stat4"],
                     effects: 0,
                 },
                 {
                     name: "Durability",
-                    value: Math.floor(Math.random() * (20 - 0 + 1)) + 0,
+                    value: Math.floor(Math.random() * 20) + 1,
                     derivedStatistics: ["stat6"],
                     effects: -3,
                 },
@@ -111,13 +111,13 @@ const randomFighter = () => {
                 },
                 {
                     name: "Accuracy",
-                    value: Math.floor(Math.random() * (20 - 0 + 1)) + 0,
+                    value: Math.floor(Math.random() * 20) + 1,
                     derivedStatistics: ["stat9", "stat10"],
                     effects: -1,
                 },
                 {
                     name: "Charm",
-                    value: Math.floor(Math.random() * (20 - 0 + 1)) + 0,
+                    value: Math.floor(Math.random() * 20) + 1,
                     derivedStatistics: ["stat11", "stat12"],
                     effects: 7,
                 },

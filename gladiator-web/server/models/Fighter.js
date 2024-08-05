@@ -46,6 +46,15 @@ const CombatCategoryTypes = {
     Melee: 'Melee',
 };
 
+const LimbPointsMap = {
+    [LimbTypes.Head] : 5,
+    [LimbTypes.Torso] : 5,
+    [LimbTypes.LeftArm] : 2,
+    [LimbTypes.RightArm] : 2,
+    [LimbTypes.LeftLeg] : 3,
+    [LimbTypes.RightLeg] : 3,
+}
+
 const LimbSchema = new Schema({
     name: {
         type: String,
@@ -221,7 +230,7 @@ FighterSchema.methods.applyDamage = async function (damage, targetLimb) {
     let limb;
 
     // Perform the search operation
-    this.health.limbs.forEach(element => {
+    this.health.limbs.forEach((limb) => {
         if (element.name === targetLimb) {
             limb = element;
         }
@@ -230,16 +239,9 @@ FighterSchema.methods.applyDamage = async function (damage, targetLimb) {
     if (limb == null) throw new Error(`limb not found: ${targetLimb}`);
 
     let leftOver = 0
-
-    if (limb.regenerativeHealth < damage) {
-        leftOver = Math.abs(limb.regenerativeHealth - damage);
-        limb.regenerativeHealth -= damage;
-        if (limb.regenerativeHealth < 0) {
-            limb.regenerativeHealth = 0;
-        }
-    } else {
-        limb.regenerativeHealth -= damage;
-    }
+    leftOver = Math.max(damage - limb.regenerativeHealth, 0);
+    limb.regenerativeHealth = Math.max(limb.regenerativeHealth - damage, 0);
+    
 
     if (leftOver > 0) {
         limb.healthLimit -= leftOver
@@ -251,7 +253,6 @@ FighterSchema.methods.applyDamage = async function (damage, targetLimb) {
 
     await this.save();
 };
-
 
 FighterSchema.methods.damageAbsorption = async function (attack, defense) {
     //Check to see if the move pattern intersects with the defensive Posture pattern
@@ -417,26 +418,25 @@ FighterSchema.methods.getAvailableMoves = async function (xMod, yMod) {
 
 //This will take the cords, loop through the list of patterns and determine if theres a fighter in any of cords that comeout of the patterns 
 //and then return the move and that pattern as a list 
-FighterSchema.methods.movesInRangeOfAnotherFighter = async function (fightFloor) {
+//This is sthe method thats creating the infinet loop 
+FighterSchema.methods.movesInRangeOfAnotherFighter = async function (from, grid) {
     const movesAndPatterns = [];
-    const attackerCords = fightFloor.getFighterCords(this._id.toString()).cords;
 
     for (const [index, combatSkill] of this.combatSkills.entries()) {
-        // Assuming `populate` is needed here
         await this.populate(`combatSkills.${index}.moveStatistics.move`);
 
         if (combatSkill.discipline !== DisciplineTypes.Defence) {
             for (const pattern of combatSkill.moveStatistics.move.rangePattern) {
                 pattern.forEach(({ x, y, rangeDamage }) => {
-                    const targetX = attackerCords.x + x;
-                    const targetY = attackerCords.y + y;
+                    const targetX = from.x + x;
+                    const targetY = from.y + y;
 
                     //Might be able to get the
-                    if (targetY >= 0 && targetY < fightFloor.grid.length && targetX >= 0 && targetX < fightFloor.grid[targetY].length) {
-                        const cellMarkers = fightFloor.grid[targetY][targetX].markers;
+                    if (targetY >= 0 && targetY < grid.length && targetX >= 0 && targetX < grid[targetY].length) {
+                        const cellMarkers = grid[targetY][targetX].markers;
                         const fighterMarker = cellMarkers.find(marker => marker.type === MarkerTypes.Fighter);
                         if (fighterMarker) {
-                            movesAndPatterns.push({
+                            movesAndPatterns.push({ 
                                 combatSkill,
                                 cords: { x: targetX, y: targetY },
                                 rangeDamage,
@@ -498,6 +498,8 @@ FighterSchema.methods.autoSelectDefensiveCombatSkill = async function () {
     // Select a random index from defenseIndexes
     const randomIndex = getRandomElementFromArray(defenseIndexes);
 
+    console.log({randomIndex});
+
     // Populate the moveStatistics.move field for the selected combatSkill
     await this.populate(`combatSkills.${randomIndex}.moveStatistics.move`);
 
@@ -519,9 +521,6 @@ function getNextLimb(currentLimb) {
     return limbs[nextIndex];
 }
 
-
-
-
 module.exports = mongoose.model('Fighter', FighterSchema);
 module.exports = mongoose.model('Attribute', AttributesSchema);
 module.exports = mongoose.model('Limb', LimbSchema);
@@ -532,4 +531,5 @@ module.exports = {
     CombatCategoryTypes,
     DisciplineTypes,
     INITIAL_ATTRIBUTE_POINTS,
+    LimbPointsMap,
 };

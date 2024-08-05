@@ -16,7 +16,7 @@ const FightFloor = mongoose.model('FightFloor');
 
 
 const { MarkerTypes } = require('./FightFloor');
-const { CombatCategoryTypes, AttributeTypes, LimbTypes } = require('./Fighter');
+const { CombatCategoryTypes, AttributeTypes, LimbTypes, LimbPointsMap } = require('./Fighter');
 const { getRandomElementFromArray } = require('./utils');
 
 const FightGradeTypes = {
@@ -66,6 +66,14 @@ const FightSchema = new Schema({
         type: Number,
         default: 0
     },
+    rounds: {
+        type: Number,
+        default: 3
+    },
+    turnsPerRound: {
+        type: Number,
+        default: 10
+    },
     turns: [
         {
             type: Schema.Types.ObjectId,
@@ -93,33 +101,70 @@ const FightSchema = new Schema({
 });
 
 
-FightSchema.methods.addTurns = async function (fighters, turns) {
-    const nextTurns = [];
-    const totalSpeed = fighters.reduce((sum, fighter) => sum + fighter.attributes.attributesList.find((attr) => attr.name === AttributeTypes.Speed).value, 0);
-    for (let i = 0; i < turns; i++) {
-        const randomNumber = Math.random() * totalSpeed;
-        let currentSpeed = 0;
-        let nextFighter = null;
-        for (const fighter of fighters) {
-            currentSpeed += fighter.attributes.attributesList.find((attr) => attr.name === AttributeTypes.Speed).value;
-            if (randomNumber <= currentSpeed) {
-                nextFighter = fighter;
-                break;
-            }
+function weightedRandomSelect(weightMap) {
+    // Get all fighters and their weights
+    const fighters = Array.from(weightMap.keys());
+    const weights = Array.from(weightMap.values());
+
+    // Calculate the total weight
+    const totalWeight = weights.reduce((sum, weight) => sum + weight, 0);
+
+    // Generate a random number between 1 and totalWeight (inclusive)
+    const randomNum = Math.floor(Math.random() * totalWeight) + 1;
+
+    // Select a fighter based on the random number
+    let accumulatedWeight = 0;
+    for (let i = 0; i < fighters.length; i++) {
+        accumulatedWeight += weights[i];
+        if (randomNum <= accumulatedWeight) {
+            return fighters[i];
         }
-        const round = await new Turn({ turn: i + 1, attacker: nextFighter, target: null });
-        this.turns.push(round);
     }
+}
+
+FightSchema.methods.addTurns = async function () {
+    const sequentialMod = 5
+    let sequencialMap = new Map();
+
+    for (let turnIndex = 0; turnIndex < (this.turnsPerRound * this.rounds); turnIndex++) {
+
+        let weightMap = new Map();
+
+        for (const fighter of this.fighters) {
+            const speedAttribute = fighter.attributes.attributesList.find(
+                attribute => attribute.name === AttributeTypes.Speed
+            );
+            let speedValue = speedAttribute.value;
+
+            if (sequencialMap.has(fighter._id)) {
+                speedValue -= sequencialMap.get(fighter._id) * sequentialMod;
+                if (speedValue < 0) speedValue = 0;
+            }
+
+            weightMap.set(fighter, speedValue);
+        }
+
+        const selectedFighter = weightedRandomSelect(weightMap);
+        this.turns.push(await new Turn({ turn: turnIndex, attacker: selectedFighter, target: null }));
+        // console.log({newTurn})
+
+        if (sequencialMap.has(selectedFighter._id)) {
+            sequencialMap.set(selectedFighter._id, sequencialMap.get(selectedFighter._id) + 1);
+        }
+        else {
+            sequencialMap.clear();
+            sequencialMap.set(selectedFighter._id, 1);
+        }
+    }
+
     await this.save();
-};
+}
 
 FightSchema.methods.simulate = async function () {
     // let arena = await Arena.findById(this.arena);
-    this.fighters.forEach(async (fighter, index) => {
-        await this.populate(`fighters.${index}`);
-    });
-    // let fightFloor = await FightFloor.find();
+    await this.populate(`fighters`);
 
+    // let fightFloor = await FightFloor.find();
     await this.populate({
         path: 'arena',
         model: 'Arena',
@@ -129,95 +174,127 @@ FightSchema.methods.simulate = async function () {
         }
     });
 
-
-    // console.log({ arena, fighters, fightFloor })
-    console.log(this)
-
     // fightFloor.addFighters(fighters);
-
     this.fightReplay.push(this.arena.fightFloor);
 
     if (!this.arena) {
         throw new Error('Arena not found');
     }
 
-    await this.addTurns(this.fighters, 10);
+    await this.addTurns();
+    await this.arena.fightFloor.addFighters(this.fighters);
 
     let fightLog = [];
-    while (this.isOver() == false)
-        for (let round = 0; round < this.turns.length; round++) {
-            const activeTurn = this.turns[round];
-            const attacker = activeTurn.attacker;
 
-            attacker.inFightRecovery();
+    this.turns.forEach(async (turn, index) => {
+        await this.populate(`turns.${index}`);
 
-            const attackerPosition = this.arena.fightFloor.getFighterCords(attacker._id.toString()).cords;
+        await turn.populate(`attacker`);
 
-            const possibleCellsToMoveTo = this.arena.fightFloor.getNeighboringCells(attackerPosition.x, attackerPosition.y);
+        const attacker = turn.attacker;
 
-            const selectedCell = attacker.autoSelectCell(possibleCellsToMoveTo);
-            activeTurn.moveTo.cords = selectedCell.cords;
+        await attacker.inFightRecovery();
 
-            this.fightReplay.push(this.arena.fightFloor.move(attacker, selectedCell.cords));
+        const attackerPosition = this.arena.fightFloor.getFighterCords(attacker._id.toString()).cords;
+        const possibleCellsToMoveTo = this.arena.fightFloor.getNeighboringCells(attackerPosition.x, attackerPosition.y);
+        const selectedCell = attacker.autoSelectCell(possibleCellsToMoveTo);
 
-            const moveOptions = await attacker.movesInRangeOfAnotherFighter(selectedCell.cords, this.arena.fightFloor.grid);
+        turn.moveTo.cords = selectedCell.cords;
+        
+        await this.arena.fightFloor.move(attacker, selectedCell.cords);
+        console.log(this.fightReplay.length);
 
-            //We found a fighter the attacker can hit after they moved 
-            if (movesInRange.length > 0) {
+        this.fightReplay.push(this.arena.fightFloor);
 
-                //build attack.
-                const selectedMoveOption = getRandomElementFromArray(moveOptions);
-                const { combatSkill, cords, rangeDamage, opponentId } = selectedMoveOption;
-                const selectedStrikingLimb = getRandomElementFromArray(combatSkill.moveStatistics.move.strikingLimb);
-                const selectedTargetLimb = getRandomElementFromArray(combatSkill.moveStatistics.move.targets);
+        const moveOptions = await attacker.movesInRangeOfAnotherFighter(selectedCell.cords, this.arena.fightFloor.grid);
 
-                activeTurn.attack = {
-                    combatSkill,
-                    strikingWith: selectedStrikingLimb,
-                    target: selectedTargetLimb,
-                    damage: combatSkill.moveStatistics.move.baseMoveDamage,
-                    pattern: {
-                        rangeDamage,
-                        x: cords.x,
-                        y: cords.y
-                    }
-                };
+        console.log({moveOptions})
 
-                //build defense 
-                const opponent = fighters.find((fighter) => fighter._id.toString() === opponentId);
+        //We found a fighter the attacker can hit after they moved 
+        if (moveOptions.length > 0) {
 
-                // Update opponent values
-                const { combatSkill: targetCombatSkill, strikingLimb: targetStrikingLimb, target: targetMovetarget, pattern: targetPattern } = opponent.autoSelectDefensiveCombatSkill();
+            //build attack.
+            const selectedMoveOption = getRandomElementFromArray(moveOptions);
+            const { combatSkill, cords, rangeDamage, opponentId } = selectedMoveOption;
+            const selectedStrikingLimb = getRandomElementFromArray(combatSkill.moveStatistics.move.strikingLimb);
+            const selectedTargetLimb = getRandomElementFromArray(combatSkill.moveStatistics.move.targets);
 
-                activeTurn.target = opponent;
-                activeTurn.defense = {
-                    combatSkill: targetCombatSkill,
-                    strikingWith: targetStrikingLimb,
-                    target: targetMovetarget,
-                    pattern: {
-                        rangeDamage: targetPattern.rangeDamage,
-                        x: targetPattern.x,
-                        y: targetPattern.y
-                    }
-                };
-            }
-            // go straight to end of turn after movement
-            else {
-                activeTurn.attack = {
-                    combatSkill: { name: Move.RangeDamageTypes.None }
+            turn.attack = {
+                combatSkill,
+                strikingWith: selectedStrikingLimb,
+                target: selectedTargetLimb,
+                damage: combatSkill.moveStatistics.move.baseMoveDamage,
+                pattern: {
+                    rangeDamage,
+                    x: cords.x,
+                    y: cords.y
                 }
-            }
+            };
 
-            activeTurn.run();
-            this.currentExcitement += activeTurn.calculateHype();
+            //build defense 
+            const opponent = this.fighters.find((fighter) => fighter._id.toString() === opponentId);
+
+            // Update opponent values
+            const { combatSkill: targetCombatSkill, strikingLimb: targetStrikingLimb, target: targetMovetarget, pattern: targetPattern } = opponent.autoSelectDefensiveCombatSkill();
+
+            turn.target = opponent;
+            turn.defense = {
+                combatSkill: targetCombatSkill,
+                strikingWith: targetStrikingLimb,
+                target: targetMovetarget,
+                pattern: {
+                    rangeDamage: targetPattern.rangeDamage,
+                    x: targetPattern.x,
+                    y: targetPattern.y
+                }
+            };
         }
-    this.save();
+
+        console.log("RunningTurn")
+        turn.run();
+        console.log("Turn Complete")
+        this.checkScore();
+        this.currentExcitement += turn.calculateHype();
+    });
+    await this.save();
 };
 
-FightSchema.methods.checkScore = function () {
-    //looks at the health of a fighter and determines if a point was scored
-    //returns a map of the fighter scores : { fighter: , score: }
+FightSchema.methods.checkScore = function (round) {
+    const highestScore = new Map();
+    const scoreboard = new Map();
 
+    this.turns[round - 1].forEach((turn) => {
+        if (turn.attack && turn.attacker && turn.attack.target) {
+            const attackerId = turn.attacker.toString();
+            const limb = turn.attack.target;
+            const damage = turn.attack.damage;
+
+            if (!highestScore.has(limb)) {
+                highestScore.set(limb, { attackerId, damage });
+            }
+            else {
+                const oldAttackerId = highestScore.get(limb).attackerId;
+                const oldDamage = highestScore.get(limb).damage;
+                let possibleHighscores = [{ attackerId, damage }, { oldAttackerId, oldDamage }]
+
+                let highScore = possibleHighscores.reduce((max, score) =>
+                    score.damage > max.damage ? score : max, possibleHighscores[0]
+                );
+
+                highestScore.set(limb, highScore)
+            }
+        }
+    });
+
+    highestScore.forEach((limb, key) => {
+        if (!scoreboard.has(limb.attackerId)) {
+            scoreboard.set(limb.attackerId, LimbPointsMap[key]);
+        } else {
+            scoreboard.set(limb.attackerId, scoreboard.get(limb.attackerId) + LimbPointsMap[key]);
+        }
+    });
+
+    return scoreboard;
 };
 
 FightSchema.methods.isOver = function () {

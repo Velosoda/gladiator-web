@@ -146,7 +146,6 @@ FightSchema.methods.addTurns = async function () {
 
         const selectedFighter = weightedRandomSelect(weightMap);
         this.turns.push(await new Turn({ turn: turnIndex, attacker: selectedFighter, target: null }));
-        // console.log({newTurn})
 
         if (sequencialMap.has(selectedFighter._id)) {
             sequencialMap.set(selectedFighter._id, sequencialMap.get(selectedFighter._id) + 1);
@@ -182,13 +181,14 @@ FightSchema.methods.simulate = async function () {
     }
 
     await this.addTurns();
+    console.log("Turns Added")
+    
     await this.arena.fightFloor.addFighters(this.fighters);
+    console.log("Fighters Added to floor")
 
     let fightLog = [];
 
     this.turns.forEach(async (turn, index) => {
-        await this.populate(`turns.${index}`);
-
         await turn.populate(`attacker`);
 
         const attacker = turn.attacker;

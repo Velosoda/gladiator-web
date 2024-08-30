@@ -106,7 +106,7 @@ describe('FightFloor Model', () => {
         expect(fight.turns[0].length).toEqual(fight.turnsPerRound);
     });
 
-    test.only('Run Fight returns a winner and a loser', async () => {
+    test('Run Fight returns a winner and a loser', async () => {
         let fightFloor = await FightFloor.create(ThreeByThreeFightFloor());
         let fighter1 = await Fighter.create(randomFighter("fighter1"));
         let fighter2 = await Fighter.create(randomFighter("fighter2"));

@@ -227,27 +227,27 @@ const FighterSchema = new Schema(
 
 FighterSchema.methods.applyDamage = async function (damage, targetLimb) {
 
-    let limb;
+    let limbReceivingDamage;
 
     // Perform the search operation
     this.health.limbs.forEach((limb) => {
-        if (element.name === targetLimb) {
-            limb = element;
+        if (limb.name === targetLimb) {
+            limbReceivingDamage = limb;
         }
     });
 
-    if (limb == null) throw new Error(`limb not found: ${targetLimb}`);
+    if (limbReceivingDamage == null) throw new Error(`limbReceivingDamage not found: ${targetLimb}`);
 
     let leftOver = 0
-    leftOver = Math.max(damage - limb.regenerativeHealth, 0);
-    limb.regenerativeHealth = Math.max(limb.regenerativeHealth - damage, 0);
+    leftOver = Math.max(damage - limbReceivingDamage.regenerativeHealth, 0);
+    limbReceivingDamage.regenerativeHealth = Math.max(limbReceivingDamage.regenerativeHealth - damage, 0);
     
 
     if (leftOver > 0) {
-        limb.healthLimit -= leftOver
-        leftOver -= limb.healthLimit - leftOver;
-        if (limb.healthLimit < 0) {
-            limb.healthLimit = 0;
+        limbReceivingDamage.healthLimit -= leftOver
+        leftOver -= limbReceivingDamage.healthLimit - leftOver;
+        if (limbReceivingDamage.healthLimit < 0) {
+            limbReceivingDamage.healthLimit = 0;
         }
     }
 
@@ -424,6 +424,9 @@ FighterSchema.methods.movesInRangeOfAnotherFighter = async function (from, grid)
 
     for (const [index, combatSkill] of this.combatSkills.entries()) {
         await this.populate(`combatSkills.${index}.moveStatistics.move`);
+        console.log({combatSkill})
+
+        console.log(JSON.stringify(this))
 
         if (combatSkill.discipline !== DisciplineTypes.Defence) {
             for (const pattern of combatSkill.moveStatistics.move.rangePattern) {
@@ -431,7 +434,6 @@ FighterSchema.methods.movesInRangeOfAnotherFighter = async function (from, grid)
                     const targetX = from.x + x;
                     const targetY = from.y + y;
 
-                    //Might be able to get the
                     if (targetY >= 0 && targetY < grid.length && targetX >= 0 && targetX < grid[targetY].length) {
                         const cellMarkers = grid[targetY][targetX].markers;
                         const fighterMarker = cellMarkers.find(marker => marker.type === MarkerTypes.Fighter);

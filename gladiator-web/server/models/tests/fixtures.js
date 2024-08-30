@@ -144,6 +144,24 @@ const randomFighter = (name= 'Test Fighter') => {
             },
             {
                 category: CombatCategoryTypes.Unarmed,
+                discipline: DisciplineTypes.Kicking,
+                moveStatistics: {
+                    level: 3,
+                    currentExp: 50,
+                    expToNextLevel: 100,
+                    throws: 20,
+                    hits: 15,
+                    targetHits: 10,
+                    misses: 5,
+                    damage: 10,
+                    hitRate: 0.75,
+                    targetHitRate: 0.5,
+                    missRate: 0.25,
+                    move: "6094bbdc6f22b80f70f7b290"
+                }
+            },
+            {
+                category: CombatCategoryTypes.Unarmed,
                 discipline: DisciplineTypes.Defence,
                 moveStatistics: {
                     level: 1,
@@ -264,19 +282,19 @@ movesList = [
         hypeOnTargetHit: 10,
         rangePattern: [
             [
-                { rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 },
+                { rangeDamage: RangeDamageTypes.Low, x: 1, y: 0 },
                 { rangeDamage: RangeDamageTypes.Normal, x: 2, y: 0 },
             ],
             [
-                { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 },
+                { rangeDamage: RangeDamageTypes.Low, x: 0, y: 1 },
                 { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 2 },
             ],
             [
-                { rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 },
+                { rangeDamage: RangeDamageTypes.Low, x: -1, y: 0 },
                 { rangeDamage: RangeDamageTypes.Normal, x: -2, y: 0 },
             ],
             [
-                { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 },
+                { rangeDamage: RangeDamageTypes.Low, x: 0, y: -1 },
                 { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -2 },
             ],
         ]

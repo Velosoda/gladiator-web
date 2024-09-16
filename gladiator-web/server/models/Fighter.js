@@ -422,18 +422,17 @@ FighterSchema.methods.getAvailableMoves = async function (xMod, yMod) {
 FighterSchema.methods.movesInRangeOfAnotherFighter = async function (from, grid) {
     const movesAndPatterns = [];
 
-    for (const [index, combatSkill] of this.combatSkills.entries()) {
-        await this.populate(`combatSkills.${index}.moveStatistics.move`);
-        console.log({combatSkill})
+    this.combatSkills.forEach(async (index, combatSkill) =>{
 
-        console.log(JSON.stringify(this))
+        const move = Move.find(combatSkill.moveStatistics.move);
 
         if (combatSkill.discipline !== DisciplineTypes.Defence) {
-            for (const pattern of combatSkill.moveStatistics.move.rangePattern) {
+            for (const pattern of move.rangePattern) {
+    
                 pattern.forEach(({ x, y, rangeDamage }) => {
                     const targetX = from.x + x;
                     const targetY = from.y + y;
-
+    
                     if (targetY >= 0 && targetY < grid.length && targetX >= 0 && targetX < grid[targetY].length) {
                         const cellMarkers = grid[targetY][targetX].markers;
                         const fighterMarker = cellMarkers.find(marker => marker.type === MarkerTypes.Fighter);
@@ -448,9 +447,9 @@ FighterSchema.methods.movesInRangeOfAnotherFighter = async function (from, grid)
                     }
                 });
             }
-        }
-    }
-    return movesAndPatterns;
+        }    
+    })
+    return movesAndPatterns
 };
 
 FighterSchema.methods.autoSelectAttack = async function (availableAttacks) {

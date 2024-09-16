@@ -146,21 +146,16 @@ FightFloorSchema.methods.getFighterCords = function (fighterId) {
 
 FightFloorSchema.methods.move = async function (fighter, cord) {
     const startingLocation = this.getFighterCords(fighter._id.toString());
-
-    let markerToAdd;
     //remove fighter from marker
     this.grid[startingLocation.cords.y][startingLocation.cords.x].markers.forEach((marker) => {
         if (marker.type === MarkerTypes.Fighter) {
-
-            markerToAdd = marker
             this.grid[startingLocation.cords.y][startingLocation.cords.x].markers.remove(marker); // this isnt working
+            
+            //add the fighter to the new marker
+            this.grid[cord.y][cord.x].markers.push(marker);
+            return this.save();
         }
     });
-
-    //add the fighter to the new marker
-    this.grid[cord.y][cord.x].markers.push(markerToAdd);
-
-    await this.save();
 };
 
 FightFloorSchema.methods.rangeToNearestFighter = function (currentFighter, startX, startY) {

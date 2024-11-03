@@ -153,9 +153,11 @@ FightFloorSchema.methods.move = async function (fighter, cord) {
             
             //add the fighter to the new marker
             this.grid[cord.y][cord.x].markers.push(marker);
-            return this.save();
+
+            // await this.findOneAndUpdate({ _id: id }, { $set: { grid: newGrid } }, { new: true, upsert: false });
         }
     });
+    return await this.save();
 };
 
 FightFloorSchema.methods.rangeToNearestFighter = function (currentFighter, startX, startY) {
@@ -249,6 +251,10 @@ FightFloorSchema.methods.getNeighboringCells = function (fromX, fromY) {
 
     return filteredPossibleCords;
 };
+FightFloorSchema.methods.clearFightFloor = function () {
+    
+};
+
 
 module.exports = mongoose.model('FightFloor', FightFloorSchema);
 module.exports = mongoose.model('Marker', MarkerSchema);

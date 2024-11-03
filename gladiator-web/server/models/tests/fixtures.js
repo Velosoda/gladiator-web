@@ -197,6 +197,24 @@ const randomFighter = (name= 'Test Fighter') => {
                     move: "6094bbdc6f22b80f70f7b28c"
                 }
             },
+            {
+                category: CombatCategoryTypes.Nothing,
+                discipline: DisciplineTypes.Nothing,
+                moveStatistics: {
+                    level: 0,
+                    currentExp: 0,
+                    expToNextLevel: 0,
+                    throws: 0,
+                    hits: 0,
+                    targetHits: 0,
+                    misses: 0,
+                    damage: 0,
+                    hitRate: 0,
+                    targetHitRate: 0,
+                    missRate: 0,
+                    move: "6094bbdc6f22b80f70f7b291"
+                }
+            },
         ]
     }
 };
@@ -244,8 +262,8 @@ movesList = [
         category: CombatCategoryTypes.Unarmed,
         discipline: DisciplineTypes.Defence,
         name: 'Roll',
-        targets: [],
-        strikingLimb: [],
+        targets: [LimbTypes.Head],
+        strikingLimb: [LimbTypes.Torso],
         baseMoveDamage: 5,
         expPerLand: 2,
         energyCost: 5,
@@ -257,6 +275,23 @@ movesList = [
             [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 }],
             [{ rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 }],
             [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 }],
+        ]
+    },
+    {
+        _id: "6094bbdc6f22b80f70f7b291",
+        category: CombatCategoryTypes.Nothing,
+        discipline: DisciplineTypes.Nothing,
+        name: 'Nothing',
+        targets: [],
+        strikingLimb: [],
+        baseMoveDamage: 0,
+        expPerLand: 0,
+        energyCost: 0,
+        criticalChance: 0,
+        canSevereLimb: false,
+        hypeOnTargetHit: 0,
+        rangePattern: [
+            [{ rangeDamage: RangeDamageTypes.Nothing, x: 0, y: 0 }],
         ]
     },
     {

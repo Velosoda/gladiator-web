@@ -1,15 +1,32 @@
 const mongoose = require('mongoose');
-const { LimbTypes, DisciplineTypes, CombatCategoryTypes } = require('./Fighter');
-
 const { Schema } = mongoose;
+
+const { LimbTypes, DisciplineTypes, CombatCategoryTypes } = require('./Fighter');
 
 const RangeDamageTypes = {
     Nothing: "Nothing",
     Normal: "Normal",
-    Weak: "Weak"
-}
+    Low: "Low",
+
+};
 
 const MoveList = [
+    {
+        category: CombatCategoryTypes.Nothing,
+        discipline: DisciplineTypes.Nothing,
+        name: 'Nothing',
+        targets: [],
+        strikingLimb: [],
+        baseMoveDamage: 0,
+        expPerLand: 0,
+        energyCost: 0,
+        criticalChance: 0,
+        canSevereLimb: false,
+        hypeOnTargetHit: 0,
+        rangePattern: [
+            [{ rangeDamage: RangeDamageTypes.Nothing, x: 0, y: 0 }],
+        ]
+    },
     {
         category: CombatCategoryTypes.Unarmed,
         discipline: DisciplineTypes.Boxing,
@@ -225,9 +242,8 @@ MoveSchema.methods.autoSelectPattern = function(){
 //     return this.rangePattern[Math.floor(Math.random() * this.rangePattern.length)];
 // }
 
-const Move = mongoose.model('Move', MoveSchema);
+module.exports = mongoose.model("Move", MoveSchema);
 module.exports = {
-    Move,
     RangeDamageTypes,
     MoveList,
 };

@@ -58,7 +58,7 @@ class TournamentService {
         }
 
         for(let i = 0; i < tournament.fights[round]; i++){
-            const fightId = tournament.fights[rount][i]; //this will be fight ids only so we need to do something else
+            const fightId = tournament.fights[round][i]; //this will be fight ids only so we need to do something else
             const fight = await Fight.find({_id: fightId});
 
             fight.simulate(tournament.arena);

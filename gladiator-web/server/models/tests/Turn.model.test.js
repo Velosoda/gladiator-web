@@ -362,8 +362,18 @@ describe('Turn Model', () => {
                     y: 1,
                 }
             },
-            results: ""
+            results:{
+                story:[]
+            }
         };
+    });
+
+    test('Turn.StringifyStory returns the story as a string', async ()=>{
+        testTurn = await new Turn(turn);
+
+        testTurn.results.story = ["test", "is out \n", "new Line"];
+
+        expect(testTurn.stringifyStory()).toEqual("testis out \nnew Line");
     });
 
     test('Turn.run runs a turn where the defender blocks an attack with a block that changes the target ', async () => {
@@ -374,8 +384,8 @@ describe('Turn Model', () => {
 
         expect(testTurn.attack.target).toEqual(LimbTypes.LeftArm);
         expect(testTurn.target.health.limbs.find((limb) => limb.name === testTurn.attack.target).regenerativeHealth).toEqual(45);
-        expect(testTurn.results).toEqual(
-            `Tongy threw a Jab at Brody's Head \nBut Brody Block the attack with their Left Arm\nFor 5 damage`
+        expect(testTurn.stringifyStory()).toEqual(
+            `Tongy moves to (1, 1)\nTongy threw a Jab at Brody's Head\nBut Brody Block the attack with their Left Arm\nTotal Damage:  5`
         );
 
     });
@@ -386,11 +396,22 @@ describe('Turn Model', () => {
         testTurn = await new Turn(turn);
 
         await testTurn.run();
-
+        
         expect(testTurn.attack.target).toEqual(LimbTypes.Head);
         expect(testTurn.target.health.limbs.find((limb) => limb.name === testTurn.attack.target).regenerativeHealth).toEqual(40);
-        expect(testTurn.results).toEqual(
-            `Tongy threw a Jab at Brody's Head \nFor 10 damage`
+        expect(testTurn.stringifyStory()).toEqual(
+            `Tongy moves to (1, 1)\nTongy threw a Jab at Brody's Head\nTotal Damage:  10`
         );
+    });
+    test('Turn.run runs a turn where the defender does nothing and gets his shit rocked', async () => {
+
+        turn.defense.combatSkill = null;
+        turn.defense.pattern= { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 0 },
+
+        testTurn = await new Turn(turn);
+
+        await testTurn.run();
+
+        expect(testTurn.stringifyStory()).toEqual("Tongy moves to (1, 1)\nTongy threw a Jab at Brody's Head\nBrody does nothing\nTotal Damage:  5")
     });
 });

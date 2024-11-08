@@ -26,7 +26,7 @@ const { CombatCategoryTypes, LimbTypes } = require("../Fighter");
 const { randomFighter, defaultArena, movesList, ThreeByThreeFightFloor } = require("./fixtures");
 const { MarkerTypes } = require("../FightFloor");
 const { RangeDamageTypes, MoveList } = require("../Move");
-const FighterService = require("../../services/fighterService");
+const FighterService = require("../../services/fighter");
 
 
 let fightFloor;

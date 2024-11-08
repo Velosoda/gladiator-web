@@ -1,7 +1,6 @@
 var router = require('express').Router();
 
-const FighterService = require('../../services/fighterService');
-var service = new FighterService();
+const FighterService = require('../../services/fighter');
 
 router.get('/test', async (req, res) => {
     console.log("test!");
@@ -12,7 +11,7 @@ router.get('/test', async (req, res) => {
 router.put('/refresh', async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     try {
-        const data = await service.refreshFighterPool();
+        const data = await FighterService.refreshFighterPool();
         res.json(data);
         
         return data;
@@ -24,7 +23,7 @@ router.put('/refresh/:count', async (req, res) => {
     res.setHeader('Content-Type', 'application/json');
     try {
         const { count } = req.params;
-        const data = await service.refreshFighterPool(count);
+        const data = await FighterService.refreshFighterPool(count);
         
         res.json(data);
         return data;
@@ -39,7 +38,7 @@ router.get('/:id', async (req, res) => {
         const { fighterId } = req.params;
         
         //Check to see if fighter exists
-        const fighter = await service.getFighterById(fighterId);
+        const fighter = await FighterService.getFighterById(fighterId);
         if (fighter == null) {
             res.json(null);
         }
@@ -57,12 +56,12 @@ router.get('/:id/disciplineAvg', async (req, res) => {
         const { fighterId } = req.params;
         
         //Check to see if fighter exists
-        const fighter = await service.getFighterById(fighterId);
+        const fighter = await FighterService.getFighterById(fighterId);
         if (fighter == null) {
             res.json(null);
         }
         
-        const disciplineAvg = service.getCombatSkillAverage(fighter);
+        const disciplineAvg = FighterService.getCombatSkillAverage(fighter);
         res.json(disciplineAvg);
         return disciplineAvg;
     } catch (error) {
@@ -77,7 +76,7 @@ router.get('/:id/combatSkills', async (req, res) => {
         const { fighterId } = req.params;
 
         //Check to see if fighter exists
-        const fighter = await service.getFighterById(fighterId);
+        const fighter = await FighterService.getFighterById(fighterId);
         if (fighter == null) {
             res.json(null);
         }

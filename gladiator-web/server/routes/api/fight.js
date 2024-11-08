@@ -1,7 +1,6 @@
 var router = require('express').Router();
 
-const FightService = require("../../services/fightService");
-var service = new FightService();
+const FightService = require("../../services/fight");
 
 router.get('/test', async(req, res) => {
     console.log("fight route Connected");
@@ -11,7 +10,7 @@ router.post('/create', async (req, res) => {
     try {
         const { fighters, combatCategory } = req.body;
 
-        const fight = await service.createFights(fighters);
+        const fight = await FightService.createFights(fighters);
 
         res.status(200).json({ message: 'Success', data: { fight } });
     } catch (error) {

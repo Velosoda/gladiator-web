@@ -6,41 +6,34 @@ const Fighter = mongoose.model('Fighter');
 const Fight = mongoose.model('Fight');
 const Arena = mongoose.model('Arena');
 
-const FightService = require('../services/fightService');
-var fightService = new FightService();
+const FightService = new (require("./fight"))();
+const FighterService = new (require('./fighter'))();
 
 class TournamentService {
     async getEntryLevelArena(){
         try {
-            return await Arena.find({ name: "Entry Level Arena"});
+            const fighters = await Fighter.aggregate([
+                { $sample: { size: count } } // Randomly selects 'count' number of fighters
+            ]);
+            return fighters 
         }
         catch (error){
-            console.error("issue Getting the entry level arena");
-            throw error;
-        }
+            console.error("Error fetching random fighters:", error);
+            throw error;        }
     }
 
-    async getNewFighters(count = 16) {
+    async generateFighters(count = 16){
         try {
-            return await Fighter.find({ pastFights: { $exists: true, $size: 0 } }, '_id').limit(count);
-        } catch (error) {
-            console.error('Issue with getting fighters for request:', error);
-            throw error;
+            return await FighterService.refreshFighterPool(count);
+        }
+        catch(e){
+            console.error("Issue Generating fighters ");
+            throw e;
         }
     }
 
-    async createTournament(fighters, arena) { // must pass fighters as ids 
-        const fights = await fightService.createFights(fighters);
-
-        // const arena = await Arena.find({ _id: arena});
-
-        // Tournament.countDocuments({ name:  })
-        //     .then(count => {
-        //         console.log(`Number of tournaments with the name "${tournamentName}": ${count}`);
-        //     })
-        //     .catch(error => {
-        //         console.error('Error:', error);
-        //     });
+    async createTournament(fighters, arena) { 
+        const fights = await FightService.createFights(fighters, arena);
 
         const newTournament = await new Tournament({
             name: 'Gateway Tournament',
@@ -48,8 +41,27 @@ class TournamentService {
             fights: fights,
             arena: arena,
         });
+
         await newTournament.save();
         return newTournament;
+    }
+
+    async createRefreshTournament(size, arena) {
+        const fighters = await FighterService.refreshFighterPool(size);
+        const newTournament = await this.createTournament(fighters, arena)
+        await newTournament.save();
+        if(newTournament === null) {
+            throw {name : "tournament never created", }; 
+        }
+        return newTournament;
+    }
+    
+    async createTournamentWithExistingFighters(count = 16, arena){
+        const fighters = await FighterService.getExistingFighters(count);
+        const newTournament = await this.createTournament(fighters, arena)
+        await newTournament.save();
+        return newTournament;
+        
     }
 
     async nextRound(tournament, round){
@@ -70,12 +82,18 @@ class TournamentService {
         nextRound(tournament, round + 1); 
     }
 
-    createAndSimulate(size = 16) {
+    createAndSimulate(size = 16, newFighters = true) {
         //Grab fighters that have not participated in any fights
         //only get a certain threshold 16, 32, 64, (125?) power of 2
         //Randomly pick this
         //Fill the fighter array with these ^ guys
-        const fighters = this.getNewFighters(size);
+        let fighters;
+        if(newFighters){
+            fighters = this.generateFighters(size);
+        }
+        else {
+            fighters = this.getNewFighters(size);
+        }
 
         //Generate a tournament
         //Set  up the fights

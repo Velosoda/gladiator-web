@@ -4,7 +4,7 @@ const Fighter = mongoose.model('Fighter');
 const Limb = mongoose.model('Limb');
 const CombatSkills = mongoose.model('CombatSkills');
 const Attribute = mongoose.model('Attribute');
-const Move = require('../models/Move');
+const Move = mongoose.model('Move');
 const {
     LimbTypes,
     AttributeTypes,
@@ -97,10 +97,10 @@ async function initializeCombatSkills() {
     for (const [category, disciplines] of Object.entries(CombatCategories)) {
         for (const discipline of disciplines) {
             const currentMoveList = await Move.find({ category: category, discipline: discipline });
-            
+
             console.log(`Category: ${category}, Discipline: ${discipline}`);
-            
-            for(const move of currentMoveList){
+
+            for (const move of currentMoveList) {
                 const stats = generateStats();
                 const combatSkillsInstance = new CombatSkills({
                     category: category,
@@ -136,7 +136,7 @@ function initializeAttributes() {
         console.log(`Attribute: ${key}, Type: ${value}`);
 
         const assignPoints = getRandomInt(1, remainingAttributePoints);
-        
+
         if (remainingAttributePoints > 0) {
             const attribute = new Attribute({
                 name: value,
@@ -184,7 +184,8 @@ class FighterService {
 
     async refreshFighterPool(count = 20) {
         try {
-            const fighters = Array.from({ length: count }, async () => {
+            const fighters = Promise.all(
+                Array.from({ length: count }, async () => {
                 const combatSkills = await initializeCombatSkills();
                 const newFighter = await new Fighter({
                     name: chance.name({ gender: 'male' }),
@@ -196,10 +197,11 @@ class FighterService {
                     },
                     combatSkills: combatSkills
                 });
-                console.log("Fighter: " , newFighter)
-                await newFighter.save();
-            });
 
+                await newFighter.save();
+                return newFighter;
+            }));
+            
             return fighters;
         } catch (error) {
             console.log(`issue trying to add fighters ${error}`);
@@ -207,6 +209,22 @@ class FighterService {
         }
     }
 
+    async createRandomFighter() {
+        const combatSkills = await initializeCombatSkills();
+        const newFighter = await new Fighter({
+            name: chance.name({ gender: 'male' }),
+            health: {
+                limbs: initializeLimbs()
+            },
+            attributes: {
+                attributesList: initializeAttributes()
+            },
+            combatSkills: combatSkills
+        });
+        console.log("Fighter: ", newFighter)
+        await newFighter.save();
+        return newFighter;
+    }
     async setMovesLearned(newFighter) {
         const combatSkillAverageMap = this.getCombatSkillAverage(newFighter);
 

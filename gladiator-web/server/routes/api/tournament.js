@@ -2,6 +2,7 @@ var router = require('express').Router();
 
 const TournamentService = new (require("../../services/tournament"))();
 const FighterService = new (require('../../services/fighter'))();
+const DBService = new (require('../../services/dbservice'))();
 
 
 router.post('/create', async(req, res)=> {
@@ -29,6 +30,7 @@ router.post('/create', async(req, res)=> {
 // });
 
 router.post('/create/refreshTournament', async (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
     let tournament;
     try {
         const { size, arena } = req.body;
@@ -45,19 +47,30 @@ router.post('/create/refreshTournament', async (req, res) => {
     return tournament
 });
 
-router.post('/:tournament/simulate', async(req,res) => {
+router.post('/:tournamentId/simulate', async(req,res) => {
     res.setHeader('Content-Type', 'application/json');
     try {
-        const { tournament } = req.params;
+        const { tournamentId } = req.params;
         
-        const result = await TournamentService.simulate( tournament );
+        const result = await TournamentService.simulate( tournamentId.toString());
+
         
         res.status(200).json({ message: 'Success', data: { result } });
     } catch (error) {
         console.error('Error:', error);
-        res.status(500).json({ error: 'Internal Server Error' });
+        res.status(500).json({ error: 'Internal Server Error' + error});
     }
 });
 
+router.post('/resetDB', async(req,res) => {
+    res.setHeader('Content-Type', 'application/json');
+    try {
+        const res = await DBService.removeAllObjects();
+        return res;
+    }catch(e) {
+        console.error(e);
+    }
+
+});
 
 module.exports = router;

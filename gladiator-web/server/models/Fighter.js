@@ -4,7 +4,7 @@ const { Schema } = mongoose;
 const { MarkerTypes } = require('./FightFloor');
 const { getRandomElementFromArray } = require('./utils');
 
-const INITIAL_ATTRIBUTE_POINTS = 15;
+const INITIAL_ATTRIBUTE_POINTS = 100;
 
 const LimbTypes = {
     Head: 'Head',
@@ -47,12 +47,12 @@ const CombatCategoryTypes = {
 };
 
 const LimbPointsMap = {
-    [LimbTypes.Head] : 5,
-    [LimbTypes.Torso] : 5,
-    [LimbTypes.LeftArm] : 2,
-    [LimbTypes.RightArm] : 2,
-    [LimbTypes.LeftLeg] : 3,
-    [LimbTypes.RightLeg] : 3,
+    [LimbTypes.Head]: 5,
+    [LimbTypes.Torso]: 5,
+    [LimbTypes.LeftArm]: 2,
+    [LimbTypes.RightArm]: 2,
+    [LimbTypes.LeftLeg]: 3,
+    [LimbTypes.RightLeg]: 3,
 }
 
 const LimbSchema = new Schema({
@@ -84,7 +84,7 @@ const LimbSchema = new Schema({
         type: Number,
         default: 2 // Default pointValue value
     },
-    criticalStrikeTriggers :{
+    criticalStrikeTriggers: {
         type: [String],
         default: []
     }
@@ -92,22 +92,22 @@ const LimbSchema = new Schema({
 });
 
 // Add methods directly to the schema
-LimbSchema.methods.zeroRegen = function() {
+LimbSchema.methods.zeroRegen = function () {
     console.log("Running zeroRegen");
     return { zeroRegen: { status: "ok", value: 10 } };
 };
 
-LimbSchema.methods.healthLimitHit = function() {
+LimbSchema.methods.healthLimitHit = function () {
     console.log("Running healthLimitHit");
     return { healthLimitHit: { status: "alert", value: 5 } };
 };
 
-LimbSchema.methods.healthLifetimeLimitHit = function() {
+LimbSchema.methods.healthLifetimeLimitHit = function () {
     console.log("Running healthLifetimeLimitHit");
     return { healthLifetimeLimitHit: { status: "warning", value: 2 } };
 };
 
-LimbSchema.methods.runCriticalStrikeTriggers = function() {
+LimbSchema.methods.runCriticalStrikeTriggers = function () {
     return this.functions.reduce((acc, funcName) => {
         if (typeof this[funcName] === 'function') { // Check if the method exists
             const result = this[funcName](); // Call the method on the instance
@@ -275,7 +275,7 @@ FighterSchema.methods.applyDamage = async function (damage, targetLimb) {
     let leftOver = 0
     leftOver = Math.max(damage - limbReceivingDamage.regenerativeHealth, 0);
     limbReceivingDamage.regenerativeHealth = Math.max(limbReceivingDamage.regenerativeHealth - damage, 0);
-    
+
 
     if (leftOver > 0) {
         limbReceivingDamage.healthLimit -= leftOver
@@ -287,7 +287,7 @@ FighterSchema.methods.applyDamage = async function (damage, targetLimb) {
 
     await this.save();
 
-    return { 
+    return {
         //results of health check progression 
         /*
             zeroRegenHealthRollFailed: true,
@@ -449,8 +449,6 @@ FighterSchema.methods.getAvailableMoves = async function (xMod, yMod) {
         await this.populate(`combatSkills.${index}.moveStatistics.move`);
         const combatSkill = this.combatSkills[index];
 
-        console.log({ combatSkill })
-
         const rangeStats = combatSkill.moveStatistics.move.inRange(xMod, yMod)
         if (rangeStats.inRange && combatSkill.discipline != DisciplineTypes.Defence) {
             const patterns = rangeStats.patterns
@@ -467,25 +465,25 @@ FighterSchema.methods.getAvailableMoves = async function (xMod, yMod) {
 FighterSchema.methods.movesInRangeOfAnotherFighter = async function (from, grid) {
     const movesAndPatterns = [];
 
-    const currentFighter = grid[from.y][from.x].markers.find((marker) => marker.type === MarkerTypes.Fighter).value;
-
     for (const combatSkill of this.combatSkills) {
-        await this.populate('combatSkills.moveStatistics.move');      
-        
+        await this.populate('combatSkills.moveStatistics.move');
+
         if (combatSkill.discipline !== DisciplineTypes.Defence && combatSkill.discipline !== DisciplineTypes.Nothing) {
             for (const pattern of combatSkill.moveStatistics.move.rangePattern) {
-    
+
                 pattern.forEach(({ x, y, rangeDamage }) => {
                     const targetX = from.x + x;
                     const targetY = from.y + y;
-    
+
                     if (targetY >= 0 && targetY < grid.length && targetX >= 0 && targetX < grid[targetY].length) {
                         const cellMarkers = grid[targetY][targetX].markers;
-                        const fighterMarker = cellMarkers.find((marker) => (marker.type === MarkerTypes.Fighter) && (marker.value !== currentFighter));
-                        
+                        const fighterMarker = cellMarkers.find((marker) => (marker.type === MarkerTypes.Fighter) && (marker.value !== this._id.toString()));
+
                         if (fighterMarker) {
+
+                            // console.log({fighterMarker}, JSON.stringify(grid, null, 4))
                             // console.log({pattern, targetX, targetY, currentFighter, combatSkill}," - Opponent: ", fighterMarker.value)
-                            movesAndPatterns.push({ 
+                            movesAndPatterns.push({
                                 combatSkill,
                                 cords: { x: targetX, y: targetY },
                                 rangeDamage,
@@ -495,8 +493,9 @@ FighterSchema.methods.movesInRangeOfAnotherFighter = async function (from, grid)
                     }
                 });
             }
-        }    
+        }
     }
+
     return movesAndPatterns
 };
 
@@ -557,7 +556,7 @@ FighterSchema.methods.autoSelectDefensiveCombatSkill = async function () {
     const target = getRandomElementFromArray(move.targets);
     const strikingLimb = getRandomElementFromArray(move.strikingLimb);
     const pattern = getRandomElementFromArray(move.rangePattern);
-    
+
     return { combatSkill: populatedCombatSkill, target, strikingLimb, pattern };
 };
 
@@ -579,4 +578,5 @@ module.exports = {
     DisciplineTypes,
     INITIAL_ATTRIBUTE_POINTS,
     LimbPointsMap,
+    
 };

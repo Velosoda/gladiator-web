@@ -6,7 +6,7 @@ const FightFloorTerrainTypes = {
     CriticalDamageArea: "CriticalDamageArea",
     KnockoutArea: "KnockoutArea",
     Wall: "Wall",
-    Boundry: "Boundry" 
+    Boundry: "Boundry"
 };
 
 const MarkerTypes = {
@@ -144,20 +144,19 @@ FightFloorSchema.methods.getFighterCords = function (fighterId) {
     }
 };
 
-FightFloorSchema.methods.move = async function (fighter, cord) {
+FightFloorSchema.methods.move = function (fighter, cord) {
     const startingLocation = this.getFighterCords(fighter._id.toString());
     //remove fighter from marker
     this.grid[startingLocation.cords.y][startingLocation.cords.x].markers.forEach((marker) => {
-        if (marker.type === MarkerTypes.Fighter) {
+        if (marker.value === fighter._id) {
             this.grid[startingLocation.cords.y][startingLocation.cords.x].markers.remove(marker); // this isnt working
-            
+
             //add the fighter to the new marker
             this.grid[cord.y][cord.x].markers.push(marker);
 
             // await this.findOneAndUpdate({ _id: id }, { $set: { grid: newGrid } }, { new: true, upsert: false });
         }
     });
-    return await this.save();
 };
 
 FightFloorSchema.methods.rangeToNearestFighter = function (currentFighter, startX, startY) {
@@ -251,8 +250,13 @@ FightFloorSchema.methods.getNeighboringCells = function (fromX, fromY) {
 
     return filteredPossibleCords;
 };
-FightFloorSchema.methods.clearFightFloor = function () {
-    
+FightFloorSchema.methods.clearFightFloorOfFighters = async function () {
+    this.grid.forEach((row) => {
+        row.forEach((cell) => {
+            cell.markers = cell.markers.filter((marker) => marker.type !== MarkerTypes.Fighter);
+        });
+    });
+    return await this.save();
 };
 
 
@@ -260,6 +264,7 @@ module.exports = mongoose.model('FightFloor', FightFloorSchema);
 module.exports = mongoose.model('Marker', MarkerSchema);
 module.exports = mongoose.model('Cell', CellSchema);
 module.exports = {
-    MarkerTypes, 
-    FightFloorTerrainTypes
+    MarkerTypes,
+    FightFloorTerrainTypes,
+    FightFloorSchema
 }

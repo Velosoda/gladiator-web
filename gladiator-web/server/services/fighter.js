@@ -93,39 +93,31 @@ function initializeLimbs() {
 
 async function initializeCombatSkills() {
     const combatSkillsInstances = [];
+    const currentMoveList = await Move.find();
 
-    for (const [category, disciplines] of Object.entries(CombatCategories)) {
-        for (const discipline of disciplines) {
-            const currentMoveList = await Move.find({ category: category, discipline: discipline });
-
-            console.log(`Category: ${category}, Discipline: ${discipline}`);
-
-            for (const move of currentMoveList) {
-                const stats = generateStats();
-                const combatSkillsInstance = new CombatSkills({
-                    category: category,
-                    discipline: discipline,
-                    moveStatistics: {
-                        moveName: move.name,
-                        level: stats.level,
-                        currentExp: stats.currentExp,
-                        expToNexLevel: stats.expToNexLevel,
-                        throws: stats.throws,
-                        hits: stats.hits,
-                        targetHits: stats.targetHits,
-                        misses: stats.misses,
-                        damage: move.baseMoveDamage,
-                        hitRate: stats.hitRate,
-                        targetHitRate: stats.targetHitRate,
-                        missRate: stats.missRate,
-                    }
-                });
-                combatSkillsInstances.push(combatSkillsInstance);
+    for (const move of currentMoveList) {
+        const stats = generateStats();
+        const combatSkillsInstance = new CombatSkills({
+            category: move.category,
+            discipline: move.discipline,
+            moveStatistics: {
+                //we should just move move out one level
+                move: move._id,
+                level: stats.level,
+                currentExp: stats.currentExp,
+                expToNexLevel: stats.expToNexLevel,
+                throws: stats.throws,
+                hits: stats.hits,
+                targetHits: stats.targetHits,
+                misses: stats.misses,
+                damage: move.baseMoveDamage,
+                hitRate: stats.hitRate,
+                targetHitRate: stats.targetHitRate,
+                missRate: stats.missRate,
             }
-        }
+        });
+        combatSkillsInstances.push(combatSkillsInstance);
     }
-
-    console.log("CombatSKills: ", combatSkillsInstances);
     return combatSkillsInstances;
 }
 
@@ -133,8 +125,6 @@ function initializeAttributes() {
     var remainingAttributePoints = INITIAL_ATTRIBUTE_POINTS;
     var attributes = [];
     for (const [key, value] of Object.entries(AttributeTypes)) {
-        console.log(`Attribute: ${key}, Type: ${value}`);
-
         const assignPoints = getRandomInt(1, remainingAttributePoints);
 
         if (remainingAttributePoints > 0) {
@@ -160,6 +150,26 @@ function initializeAttributes() {
     // console.log("Attribute ", attributes);
     return attributes;
 }
+// function distributeAttributePoints(attributeTypes, totalPoints) {
+//     const attributes = Object.values(attributeTypes);
+//     const pointsDistribution = {};
+//     let remainingPoints = totalPoints;
+
+//     for (let i = 0; i < attributes.length; i++) {
+//         // Assign random points to the current attribute, but ensure enough points remain
+//         const maxPoints = remainingPoints - (attributes.length - i - 1);
+//         const assignedPoints = Math.floor(Math.random() * (maxPoints + 1));
+//         pointsDistribution[attributes[i]] = assignedPoints;
+
+//         // Deduct the assigned points from the remaining points
+//         remainingPoints -= assignedPoints;
+//     }
+
+//     // Assign the remaining points to the last attribute
+//     pointsDistribution[attributes[attributes.length - 1]] += remainingPoints;
+
+//     return pointsDistribution;
+// }
 
 class FighterService {
     getCombatSkillAverage(fighter) {
@@ -186,22 +196,22 @@ class FighterService {
         try {
             const fighters = Promise.all(
                 Array.from({ length: count }, async () => {
-                const combatSkills = await initializeCombatSkills();
-                const newFighter = await new Fighter({
-                    name: chance.name({ gender: 'male' }),
-                    health: {
-                        limbs: initializeLimbs()
-                    },
-                    attributes: {
-                        attributesList: initializeAttributes()
-                    },
-                    combatSkills: combatSkills
-                });
+                    const combatSkills = await initializeCombatSkills();
+                    const newFighter = await new Fighter({
+                        name: chance.name({ gender: 'male' }),
+                        health: {
+                            limbs: initializeLimbs()
+                        },
+                        attributes: {
+                            attributesList: initializeAttributes()
+                        },
+                        combatSkills: combatSkills
+                    });
 
-                await newFighter.save();
-                return newFighter;
-            }));
-            
+                    await newFighter.save();
+                    return newFighter;
+                }));
+
             return fighters;
         } catch (error) {
             console.log(`issue trying to add fighters ${error}`);
@@ -221,7 +231,6 @@ class FighterService {
             },
             combatSkills: combatSkills
         });
-        console.log("Fighter: ", newFighter)
         await newFighter.save();
         return newFighter;
     }

@@ -1,4 +1,5 @@
-const Move = require('../models/Move');
+var mongoose = require('mongoose');
+const Move = mongoose.model('Move');
 
 class MoveService {
     static async getAllMoves() {

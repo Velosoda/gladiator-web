@@ -44,7 +44,7 @@ if(isProduction){
   uri = `mongodb+srv://${mongoUser}:${mongoPassword}@${mongoAddress}/?retryWrites=true&w=majority`;
 
   mongoose.connect(uri);
-  mongoose.set('debug', true);
+  mongoose.set('debug', false);
 }
 
 app.use((req, res, next) => {

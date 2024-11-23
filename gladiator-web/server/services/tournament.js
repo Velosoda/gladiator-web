@@ -64,22 +64,26 @@ class TournamentService {
         
     }
 
-    async nextRound(tournament, round){
-        if(tournament.fighters == 1){
-            return tournament;
+    async run(tournament) {
+        let round = 0;
+    
+        while (tournament.fighters.length > 1) {
+            let winners = [];
+    
+            for (const fightId of tournament.fights[round]) {
+                const fight = await Fight.findById(fightId);
+                await fight.simulate();
+                winners.push(fight.winners[0]);
+            }
+    
+            tournament.fights.push(await FightService.createFights(winners, tournament.arena)); // we have to add the combattypes
+            tournament.fighters = winners;
+            round++;
+            console.log({round}, tournament.arena)
         }
-
-        for(let i = 0; i < tournament.fights[round]; i++){
-            const fightId = tournament.fights[round][i]; //this will be fight ids only so we need to do something else
-            const fight = await Fight.find({_id: fightId});
-
-            fight.simulate(tournament.arena);
-
-            tournament.fighters = tournament.fighters.filter(fighter => fighter !== fight.loser);
-        }
-
-        tournament.fights.push(await fightService.createFights(tournament.fighters));
-        nextRound(tournament, round + 1); 
+    
+        await tournament.save();
+        return tournament;
     }
 
     createAndSimulate(size = 16, newFighters = true) {
@@ -115,10 +119,13 @@ class TournamentService {
     }
     async simulate(tournament){
         // get tournament
+        const currentTournament = await Tournament.findById(tournament)
 
-        const currentTournament = await Tournament.find({_id: tournament})
+        if (currentTournament != null){
+            return await this.run(currentTournament)
+        }
 
-        return winner = this.nextRound(currentTournament).fighters[0];
+        else return null
     }   
 }
 

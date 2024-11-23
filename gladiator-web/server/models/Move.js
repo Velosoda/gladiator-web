@@ -12,22 +12,7 @@ const RangeDamageTypes = {
 
 const MoveList = [
     {
-        category: CombatCategoryTypes.Nothing,
-        discipline: DisciplineTypes.Nothing,
-        name: 'Nothing',
-        targets: [],
-        strikingLimb: [],
-        baseMoveDamage: 0,
-        expPerLand: 0,
-        energyCost: 0,
-        criticalChance: 0,
-        canSevereLimb: false,
-        hypeOnTargetHit: 0,
-        rangePattern: [
-            [{ rangeDamage: RangeDamageTypes.Nothing, x: 0, y: 0 }],
-        ]
-    },
-    {
+        _id: "6094bbdc6f22b80f70f7b28a",
         category: CombatCategoryTypes.Unarmed,
         discipline: DisciplineTypes.Boxing,
         name: 'Jab',
@@ -47,25 +32,29 @@ const MoveList = [
         ]
     },
     {
+        _id: "6094bbdc6f22b80f70f7b28b",
         category: CombatCategoryTypes.Unarmed,
-        discipline: DisciplineTypes.Boxing,
-        name: 'Nothing',
-        targets: [],
-        strikingLimb: [],
-        baseMoveDamage: 0,
-        expPerLand: 0,
-        energyCost: 0,
-        criticalChance: 0,
-        canSevereLimb: false,
-        hypeOnTargetHit: 0,
-        rangePattern: [{ rangeDamage: RangeDamageTypes.Nothing, x: 0, y: 0 }]
-    },
-    {
-        category: CombatCategoryTypes.Unarmed,
-        discipline: DisciplineTypes.Boxing,
-        name: 'Cross',
+        discipline: DisciplineTypes.Defence,
+        name: 'Block',
         targets: [LimbTypes.Head, LimbTypes.Torso],
         strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
+        baseMoveDamage: 5,
+        expPerLand: 2,
+        energyCost: 5,
+        criticalChance: 5,
+        canSevereLimb: false,
+        hypeOnTargetHit: 5,
+        rangePattern: [
+            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 0 }],
+        ]
+    },
+    {
+        _id: "6094bbdc6f22b80f70f7b28c",
+        category: CombatCategoryTypes.Unarmed,
+        discipline: DisciplineTypes.Defence,
+        name: 'Roll',
+        targets: [LimbTypes.Head],
+        strikingLimb: [LimbTypes.Torso],
         baseMoveDamage: 5,
         expPerLand: 2,
         energyCost: 5,
@@ -80,40 +69,62 @@ const MoveList = [
         ]
     },
     {
-        category: CombatCategoryTypes.Unarmed,
-        discipline: DisciplineTypes.Boxing,
-        name: 'Hook',
-        targets: [LimbTypes.Head, LimbTypes.Torso],
-        strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
-        baseMoveDamage: 10,
-        expPerLand: 4,
-        energyCost: 10,
-        criticalChance: 10,
-        canSevereLimb: false,
-        hypeOnTargetHit: 8,
-        rangePattern: [
-            [{ rangeDamage: RangeDamageTypes.Normal, x: 1, y: 0 }],
-            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 1 }],
-            [{ rangeDamage: RangeDamageTypes.Normal, x: -1, y: 0 }],
-            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: -1 }],
-        ]
-    },
-    {
-        category: CombatCategoryTypes.Unarmed,
-        discipline: DisciplineTypes.Boxing,
-        name: 'Block',
-        targets: [LimbTypes.Head, LimbTypes.Torso],
-        strikingLimb: [LimbTypes.LeftArm, LimbTypes.RightArm],
-        baseMoveDamage: 40,
-        expPerLand: 2,
+        _id: "6094bbdc6f22b80f70f7b291",
+        category: CombatCategoryTypes.Nothing,
+        discipline: DisciplineTypes.Nothing,
+        name: 'Nothing',
+        targets: [],
+        strikingLimb: [],
+        baseMoveDamage: 0,
+        expPerLand: 0,
         energyCost: 0,
         criticalChance: 0,
         canSevereLimb: false,
         hypeOnTargetHit: 0,
         rangePattern: [
-            [{ rangeDamage: RangeDamageTypes.Normal, x: 0, y: 0 }],
+            [{ rangeDamage: RangeDamageTypes.Nothing, x: 0, y: 0 }],
         ]
     },
+    {
+        _id: "6094bbdc6f22b80f70f7b290",
+        category: CombatCategoryTypes.Unarmed,
+        discipline: DisciplineTypes.Kicking,
+        name: 'Side Kick',
+        targets: [
+            LimbTypes.Head,
+            LimbTypes.Torso,
+            LimbTypes.LeftLeg,
+            LimbTypes.RightLeg,
+        ],
+        strikingLimb: [
+            LimbTypes.LeftLeg,
+            LimbTypes.RightLeg,
+        ],
+        baseMoveDamage: 10,
+        expPerLand: 5,
+        energyCost: 20,
+        criticalChance: 10,
+        canSevereLimb: false,
+        hypeOnTargetHit: 10,
+        rangePattern: [
+            [
+                { rangeDamage: RangeDamageTypes.Low, x: 1, y: 0 },
+                { rangeDamage: RangeDamageTypes.Normal, x: 2, y: 0 },
+            ],
+            [
+                { rangeDamage: RangeDamageTypes.Low, x: 0, y: 1 },
+                { rangeDamage: RangeDamageTypes.Normal, x: 0, y: 2 },
+            ],
+            [
+                { rangeDamage: RangeDamageTypes.Low, x: -1, y: 0 },
+                { rangeDamage: RangeDamageTypes.Normal, x: -2, y: 0 },
+            ],
+            [
+                { rangeDamage: RangeDamageTypes.Low, x: 0, y: -1 },
+                { rangeDamage: RangeDamageTypes.Normal, x: 0, y: -2 },
+            ],
+        ]
+    }
 ];
 
 

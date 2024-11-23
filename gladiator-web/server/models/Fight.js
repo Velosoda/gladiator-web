@@ -21,7 +21,8 @@ const {
 } = require("./Fighter");
 
 const { getRandomElementFromArray } = require("./utils");
-const { MarkerTypes } = require("./FightFloor");
+const { MarkerTypes, FightFloorSchema } = require("./FightFloor");
+const { RangeDamageTypes } = require("./Move");
 
 const FightGradeTypes = {
     A: "A",
@@ -59,12 +60,10 @@ const FightSchema = new Schema({
         type: Schema.Types.ObjectId,
         ref: "Arena",
     },
-    fightReplay: [
-        {
-            type: Schema.Types.ObjectId,
-            ref: "FightFloor",
-        },
-    ],
+    fightReplay: {
+        type: [Schema.Types.Mixed], // An array of Mixed types
+        default: [], // Optional: set a default empty array
+    },
     combatCategory: {
         type: String,
         enum: Object.values(CombatCategoryTypes),
@@ -90,12 +89,95 @@ const FightSchema = new Schema({
         type: Number,
         default: 10,
     },
-    turns: [
-        {
-            type: Schema.Types.ObjectId,
-            ref: "Turn",
+    turns: [{
+        turn: {
+            type: Number,
+            default: 0
         },
-    ],
+        attacker: {
+            type: Schema.Types.ObjectId,
+            ref: 'Fighter',
+        },
+        target: {
+            type: Schema.Types.ObjectId,
+            ref: 'Fighter'
+        },
+        defense: {
+            combatSkill: {
+                type: Schema.Types.Mixed,
+            },
+            pattern: {
+                rangeDamage: {
+                    type: String,
+                    enum: Object.values(RangeDamageTypes),
+                },
+                x: {
+                    type: Number,
+                    default: 0
+                },
+                y: {
+                    type: Number,
+                    default: 0
+                }
+            },
+            strikingWith: {
+                type: String,
+                enum: Object.values(LimbTypes)
+            },
+            target: {
+                type: String,
+                enum: Object.values(LimbTypes)
+            },
+        },
+        attack: {
+            combatSkill: {
+                type: Schema.Types.Mixed,
+                default: null
+            },
+            strikingWith: {
+                type: String,
+                enum: Object.values(LimbTypes),
+            },
+            target: {
+                type: String,
+                enum: Object.values(LimbTypes),
+            },
+            damage: {
+                type: Number,
+                default: 0
+            },
+            pattern: {
+                rangeDamage: {
+                    type: String,
+                    enum: Object.values(RangeDamageTypes),
+                },
+                x: {
+                    type: Number,
+                    default: 0
+                },
+                y: {
+                    type: Number,
+                    default: 0
+                }
+            }
+        },
+        moveTo: {
+            cords: {
+                x: { type: Number, default: 0 },
+                y: { type: Number, default: 0 },
+            }
+        },
+        results: {
+            story: [{
+                type: String,
+                default: ""
+            }],
+            joinedStory: {
+                type: String,
+                default: ""
+            }
+        },
+    }],
     maxTurns: {
         type: Number,
         default: 400,
@@ -180,13 +262,11 @@ FightSchema.methods.addTurns = async function (maxTurns = null) {
         }
 
         selectedFighter = weightedRandomSelect(weightMap);
-        this.turns.push(
-            await new Turn({
-                turn: currentTurn,
-                attacker: selectedFighter,
-                target: null,
-            })
-        );
+        this.turns.push({
+            turn: currentTurn,
+            attacker: selectedFighter,
+            target: null,
+        });
 
         sequencialMap.set(
             selectedFighter._id,
@@ -233,13 +313,18 @@ class FightSystem {
     }
 
     static async resolveCombat(turn, currentCell, arena, fighters) {
-        turn.attacker = currentCell.markers.find((marker) => marker.type === MarkerTypes.Fighter).value;
-        await turn.populate("attacker")
-
+        // // console.log({turn, currentCell, arena, fighters})
+        // turn.attacker = currentCell.markers.forEach((marker) => {
+        //     if(marker.type === MarkerTypes.Fighter){
+        //         return marker.value;   
+        //     }
+        // });
+        await turn.populate("attacker");
         const moveOptions = await turn.attacker.movesInRangeOfAnotherFighter(currentCell.cords, arena.fightFloor.grid);
-        if (moveOptions.length > 0) {
 
+        if (moveOptions.length > 0) {
             const selectedMoveOption = getRandomElementFromArray(moveOptions);
+
             turn.target = FightSystem.getFighter(fighters, selectedMoveOption.opponentId);
             await turn.populate("target");
 
@@ -251,7 +336,7 @@ class FightSystem {
             turn.attack.combatSkill = { category: CombatCategoryTypes.Nothing }
             turn.defense = null;
         }
-        return turn;
+        return await turn.save();
     }
 
     static getFighter(fighters, fighterId) {
@@ -259,6 +344,7 @@ class FightSystem {
     }
 
     static async moveFighter(attacker, fightFloor) {
+
         const attackerPosition = fightFloor.getFighterCords(attacker._id.toString()).cords;
         const possibleCellsToMoveTo = fightFloor.getNeighboringCells(attackerPosition.x, attackerPosition.y);
         const selectedCell = attacker.autoSelectCell(possibleCellsToMoveTo);
@@ -267,7 +353,9 @@ class FightSystem {
         return selectedCell;
     }
 
-    static endFight(fight) {
+    static endFight() {
+
+
         //Determine what the fighters earned in prizes
         //
     }
@@ -286,7 +374,6 @@ class FightSystem {
         }, new Map());
 
         scoreMap.forEach((score) => {
-            // console.log(entry);
             maxScore = Math.max(maxScore, score);
         });
 
@@ -298,6 +385,8 @@ class FightSystem {
                 losers.push(fighter);
             }
         });
+
+        console.log({ scoreMap })
 
         return { winners, losers };
     }
@@ -313,6 +402,8 @@ class FightSystem {
 };
 
 FightSchema.methods.simulate = async function () {
+
+
     // let arena = await Arena.findById(this.arena);
     await this.populate(`fighters`);
 
@@ -326,13 +417,15 @@ FightSchema.methods.simulate = async function () {
         },
     });
 
-    // fightFloor.addFighters(fighters);
-    this.fightReplay.push(this.arena.fightFloor);
-
     if (!this.arena) {
         throw new Error("Arena not found");
     }
 
+
+    await this.arena.fightFloor.clearFightFloorOfFighters();
+    this.fightReplay.push(this.arena.fightFloor);
+
+    this.turns = []
     await this.addTurns(this.maxTurns);
 
     this.winningScore = this.calculateExpectedScore(this.turns.length);
@@ -341,9 +434,9 @@ FightSchema.methods.simulate = async function () {
 
     console.log("Turns, ", this.turns.length);
 
-    for (let [index, turn] of this.turns.entries()) {
-        await turn.populate('attacker');
+    for (const turn of this.turns) {
 
+        await turn.populate("attacker");
         //await turn.attacker.inFightRecovery();
 
         const selectedCell = await FightSystem.moveFighter(turn.attacker, this.arena.fightFloor);
@@ -351,29 +444,31 @@ FightSchema.methods.simulate = async function () {
 
         this.fightReplay.push(this.arena.fightFloor);
 
-        turn = await FightSystem.resolveCombat(turn, selectedCell, this.arena, this.fighters);
+        await FightSystem.resolveCombat(turn, selectedCell, this.arena, this.fighters);
         await turn.run();
 
         const turnScore = this.checkScore(turn);
         const [fighter, score] = turnScore.size ? turnScore.entries().next().value : [turn.attacker._id, 0];
         this.scoreboard.push({ fighter: fighter, score: score });
-    }
+    };
 
     //Check score see whos the winner and the loser
     // loop through score board and find out who won
 
     const { winners, losers } = FightSystem.getWinnersAndLosers(this.scoreboard);
-    console.log(winners, losers);
 
     this.winners = winners;
     this.losers = losers;
 
     //Hand out rewards to the fighters and everyone involved 
     //Clear the arena of fighters
+    await this.arena.fightFloor.clearFightFloorOfFighters();
+
+
     //Change Status of the fight To completed
     //Hand out grade
     // FightSystem.endFight(this);
-    
+
     this.status = FightStatusTypes.COMPLETED
     await this.save();
 };
@@ -464,6 +559,59 @@ FightSchema.methods.calculateExpectedScore = function (numTurns) {
     return totalScore;
 };
 
+
+FightSchema.methods.run = async function () {
+    await this.populate();
+
+    //BALANCE POINT. If attacks barely do anything always then this needs be rebalanced 
+    //This could be a stat inside of durability
+
+    //No Moves found Nothing Scenario 
+    if (this.attack.combatSkill.category != CombatCategoryTypes.Nothing) {
+        //Defense was set 
+        if (this.defense.combatSkill != null) {
+            await this.target.damageAbsorption(this.attack, this.defense);
+        }
+        //this needs to add the exp and leveling process as well as 
+        await this.target.applyDamage(this.attack.damage, this.attack.target);
+    }
+
+    this.buildStory();
+    await this.save();
+};
+
+FightSchema.methods.stringifyStory = function () {
+    return this.results.story.join("");
+};
+
+FightSchema.methods.buildStory = async function () {
+    //Coordinate Change
+    this.results.story.push(`${this.attacker.name} moves to (${this.moveTo.cords.x}, ${this.moveTo.cords.y})\n`);
+
+    //Moves found Nothing Scenario 
+    if (this.attack.combatSkill.category != CombatCategoryTypes.Nothing) {
+        this.results.story.push(`${this.attacker.name} threw a ${this.attack.combatSkill.moveStatistics.move.name} at ${this.target.name}'s ${this.attack.target}\n`);
+        //Defense was set 
+        if (this.defense.combatSkill != null) {
+            this.results.story.push(`But ${this.target.name} ${this.defense.combatSkill.moveStatistics.move.name} the attack with their ${this.defense.strikingWith.replace(/([A-Z])/g, ' $1').trim()}\n`); // would be cool to past tense this 
+        }
+        //No Defense
+        else {
+            this.results.story.push(`${this.target.name} does nothing\n`);
+        }
+    }
+    //No Moves found Nothing Scenario 
+    else {
+        this.results.story.push(`${this.attacker.name} did nothing\n`);
+    }
+
+    if (this.target != null) {
+        // this.results.story.push(`Total Damage to ${this.target.name}'s ${this.defense.strikingWith.replace(/([A-Z])/g, ' $1').trim()} :  ${this.attack.damage}\n`);
+        this.results.story.push(`${this.target.name} recieved  ${this.attack.damage} damage to their ${this.defense.strikingWith.replace(/([A-Z])/g, ' $1').trim()}\n`);
+    }
+
+    this.results.joinedStory = this.stringifyStory();
+};
 module.exports = mongoose.model("Fight", FightSchema);
 module.exports = {
     FightGradeTypes,
